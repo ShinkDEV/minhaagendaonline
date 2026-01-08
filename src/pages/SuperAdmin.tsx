@@ -176,7 +176,7 @@ export default function SuperAdmin() {
           <div className="flex items-center gap-2">
             <Crown className="h-5 w-5 text-primary" />
             <div>
-              <h1 className="font-semibold text-sm">Painel do Proprietário</h1>
+              <h1 className="font-semibold text-sm">Painel Super Admin</h1>
               <p className="text-[10px] text-muted-foreground">Gerenciamento de clientes</p>
             </div>
           </div>
