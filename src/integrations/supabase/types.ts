@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           appointment_id: string
           created_at: string
+          duration_minutes: number | null
           id: string
           price_charged: number
           service_id: string
@@ -25,6 +26,7 @@ export type Database = {
         Insert: {
           appointment_id: string
           created_at?: string
+          duration_minutes?: number | null
           id?: string
           price_charged: number
           service_id: string
@@ -32,6 +34,7 @@ export type Database = {
         Update: {
           appointment_id?: string
           created_at?: string
+          duration_minutes?: number | null
           id?: string
           price_charged?: number
           service_id?: string
@@ -127,6 +130,96 @@ export type Database = {
           },
         ]
       }
+      cashflow_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          salon_id: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          salon_id: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          salon_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashflow_categories_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cashflow_entries: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          description: string | null
+          id: string
+          occurred_at: string
+          related_appointment_id: string | null
+          salon_id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          occurred_at?: string
+          related_appointment_id?: string | null
+          salon_id: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          description?: string | null
+          id?: string
+          occurred_at?: string
+          related_appointment_id?: string | null
+          salon_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashflow_entries_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "cashflow_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cashflow_entries_related_appointment_id_fkey"
+            columns: ["related_appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cashflow_entries_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           created_at: string
@@ -161,6 +254,185 @@ export type Database = {
             columns: ["salon_id"]
             isOneToOne: false
             referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      commissions: {
+        Row: {
+          amount: number
+          appointment_id: string
+          calculated_at: string
+          created_at: string
+          id: string
+          paid_at: string | null
+          professional_id: string
+          salon_id: string
+          status: string
+        }
+        Insert: {
+          amount: number
+          appointment_id: string
+          calculated_at?: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          professional_id: string
+          salon_id: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          appointment_id?: string
+          calculated_at?: string
+          created_at?: string
+          id?: string
+          paid_at?: string | null
+          professional_id?: string
+          salon_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "commissions_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "commissions_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          appointment_id: string
+          created_at: string
+          id: string
+          method: string
+          paid_at: string
+          salon_id: string
+        }
+        Insert: {
+          amount: number
+          appointment_id: string
+          created_at?: string
+          id?: string
+          method: string
+          paid_at?: string
+          salon_id: string
+        }
+        Update: {
+          amount?: number
+          appointment_id?: string
+          created_at?: string
+          id?: string
+          method?: string
+          paid_at?: string
+          salon_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          max_professionals: number
+          name: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          max_professionals: number
+          name: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          max_professionals?: number
+          name?: string
+        }
+        Relationships: []
+      }
+      professional_service_commissions: {
+        Row: {
+          created_at: string
+          id: string
+          professional_id: string
+          salon_id: string
+          service_id: string
+          type: string
+          value: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          professional_id: string
+          salon_id: string
+          service_id: string
+          type: string
+          value: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          professional_id?: string
+          salon_id?: string
+          service_id?: string
+          type?: string
+          value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "professional_service_commissions_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_service_commissions_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "professional_service_commissions_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "services"
             referencedColumns: ["id"]
           },
         ]
@@ -245,8 +517,42 @@ export type Database = {
           },
         ]
       }
+      salon_plan: {
+        Row: {
+          plan_id: string
+          salon_id: string
+          started_at: string
+        }
+        Insert: {
+          plan_id: string
+          salon_id: string
+          started_at?: string
+        }
+        Update: {
+          plan_id?: string
+          salon_id?: string
+          started_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "salon_plan_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "salon_plan_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: true
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       salons: {
         Row: {
+          address: string | null
           created_at: string
           id: string
           name: string
@@ -254,6 +560,7 @@ export type Database = {
           timezone: string | null
         }
         Insert: {
+          address?: string | null
           created_at?: string
           id?: string
           name: string
@@ -261,6 +568,7 @@ export type Database = {
           timezone?: string | null
         }
         Update: {
+          address?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -324,6 +632,57 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      working_hours: {
+        Row: {
+          break_end: string | null
+          break_start: string | null
+          created_at: string
+          end_time: string
+          id: string
+          professional_id: string
+          salon_id: string
+          start_time: string
+          weekday: number
+        }
+        Insert: {
+          break_end?: string | null
+          break_start?: string | null
+          created_at?: string
+          end_time: string
+          id?: string
+          professional_id: string
+          salon_id: string
+          start_time: string
+          weekday: number
+        }
+        Update: {
+          break_end?: string | null
+          break_start?: string | null
+          created_at?: string
+          end_time?: string
+          id?: string
+          professional_id?: string
+          salon_id?: string
+          start_time?: string
+          weekday?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "working_hours_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "working_hours_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
