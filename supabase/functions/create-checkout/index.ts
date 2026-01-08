@@ -69,6 +69,50 @@ serve(async (req) => {
 
     const origin = req.headers.get("origin") || "http://localhost:5173";
     
+    // Check if user has an active subscription to handle upgrade with proration
+    if (customerId) {
+      const subscriptions = await stripe.subscriptions.list({
+        customer: customerId,
+        status: "active",
+        limit: 1,
+      });
+      
+      if (subscriptions.data.length > 0) {
+        const currentSubscription = subscriptions.data[0];
+        const currentItemId = currentSubscription.items.data[0].id;
+        logStep("Found active subscription, upgrading with proration", { 
+          subscriptionId: currentSubscription.id,
+          currentItemId 
+        });
+        
+        // Update the existing subscription with proration
+        const updatedSubscription = await stripe.subscriptions.update(currentSubscription.id, {
+          items: [{
+            id: currentItemId,
+            price: priceId,
+          }],
+          proration_behavior: 'always_invoice', // Immediately invoice the prorated amount
+          metadata: {
+            plan_code: planCode,
+          },
+        });
+        logStep("Subscription upgraded with proration", { 
+          subscriptionId: updatedSubscription.id,
+          newPriceId: priceId 
+        });
+
+        return new Response(JSON.stringify({ 
+          success: true, 
+          upgraded: true,
+          message: "Assinatura atualizada com sucesso! O valor proporcional foi aplicado." 
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+    }
+    
+    // No active subscription, create new checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       customer_email: customerId ? undefined : user.email,

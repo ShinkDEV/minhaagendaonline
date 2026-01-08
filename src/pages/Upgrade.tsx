@@ -131,7 +131,15 @@ export default function Upgrade() {
 
       if (error) throw error;
 
-      if (data?.url) {
+      if (data?.upgraded) {
+        // Direct upgrade with proration - no checkout needed
+        toast({
+          title: 'Plano atualizado!',
+          description: 'O valor proporcional foi aplicado automaticamente.',
+        });
+        refetch(); // Refresh subscription status
+      } else if (data?.url) {
+        // New subscription - redirect to checkout
         window.open(data.url, '_blank');
       }
     } catch (error: any) {
