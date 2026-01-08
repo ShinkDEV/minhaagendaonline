@@ -29,6 +29,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [salonPlan, setSalonPlan] = useState<(SalonPlan & { plan: Plan }) | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const setupNewUser = async (userId: string) => {
+    try {
+      // Get the free plan
+      const { data: freePlan } = await supabase
+        .from('plans')
+        .select('id')
+        .eq('code', 'free')
+        .single();
+      
+      if (!freePlan) {
+        console.error('Free plan not found');
+        return null;
+      }
+
+      // Create salon
+      const { data: salon, error: salonError } = await supabase
+        .from('salons')
+        .insert({ name: 'Meu Salão' })
+        .select()
+        .single();
+      
+      if (salonError) {
+        console.error('Error creating salon:', salonError);
+        return null;
+      }
+
+      // Update profile with salon_id
+      await supabase
+        .from('profiles')
+        .update({ salon_id: salon.id })
+        .eq('id', userId);
+
+      // Add admin role
+      await supabase
+        .from('user_roles')
+        .insert({ user_id: userId, role: 'admin' });
+
+      // Create salon plan
+      await supabase
+        .from('salon_plan')
+        .insert({ salon_id: salon.id, plan_id: freePlan.id });
+
+      // Create user as professional
+      const { data: userData } = await supabase.auth.getUser();
+      await supabase
+        .from('professionals')
+        .insert({
+          salon_id: salon.id,
+          profile_id: userId,
+          display_name: userData.user?.user_metadata?.full_name || userData.user?.email?.split('@')[0] || 'Admin',
+          commission_percent_default: 0,
+        });
+
+      return salon;
+    } catch (error) {
+      console.error('Error setting up new user:', error);
+      return null;
+    }
+  };
+
   const fetchUserData = async (userId: string) => {
     try {
       // Fetch profile
@@ -49,7 +109,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setUserRole(roleData);
 
-      // Fetch salon if profile has salon_id
+      // Check if user has salon, if not create one
       if (profileData?.salon_id) {
         const { data: salonData } = await supabase
           .from('salons')
@@ -67,6 +127,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           .maybeSingle();
         
         setSalonPlan(planData as (SalonPlan & { plan: Plan }) | null);
+      } else {
+        // New user - setup automatically
+        const newSalon = await setupNewUser(userId);
+        if (newSalon) {
+          setSalon(newSalon);
+          // Refetch all data after setup
+          await fetchUserData(userId);
+        }
       }
     } catch (error) {
       console.error('Error fetching user data:', error);
