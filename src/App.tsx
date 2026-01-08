@@ -14,12 +14,13 @@ import Servicos from "./pages/Servicos";
 import Financeiro from "./pages/Financeiro";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
+import SuperAdmin from "./pages/SuperAdmin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { user, loading } = useAuth();
+  const { user, loading, isSuperAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -34,6 +35,16 @@ function AppRoutes() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+
+  // Redirect super_admin to their panel
+  if (isSuperAdmin) {
+    return (
+      <Routes>
+        <Route path="/super-admin" element={<SuperAdmin />} />
+        <Route path="*" element={<Navigate to="/super-admin" replace />} />
       </Routes>
     );
   }

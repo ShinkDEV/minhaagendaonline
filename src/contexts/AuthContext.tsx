@@ -9,9 +9,11 @@ interface AuthContextType {
   profile: Profile | null;
   salon: Salon | null;
   userRole: UserRole | null;
+  userRoles: UserRole[];
   salonPlan: (SalonPlan & { plan: Plan }) | null;
   loading: boolean;
   isAdmin: boolean;
+  isSuperAdmin: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -26,6 +28,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [salon, setSalon] = useState<Salon | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [salonPlan, setSalonPlan] = useState<(SalonPlan & { plan: Plan }) | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,15 +43,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setProfile(profileData);
 
+      // Fetch all roles for user (including super_admin)
+      const { data: rolesData } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId);
+      
+      setUserRoles(rolesData as UserRole[] || []);
+      setUserRole(rolesData?.[0] as UserRole || null);
+
       if (profileData?.salon_id) {
-        // Fetch all data in parallel
-        const [roleResult, salonResult, planResult] = await Promise.all([
-          supabase.from('user_roles').select('*').eq('user_id', userId).maybeSingle(),
+        // Fetch salon and plan in parallel
+        const [salonResult, planResult] = await Promise.all([
           supabase.from('salons').select('*').eq('id', profileData.salon_id).maybeSingle(),
           supabase.from('salon_plan').select('*, plan:plans(*)').eq('salon_id', profileData.salon_id).maybeSingle()
         ]);
 
-        setUserRole(roleResult.data);
         setSalon(salonResult.data);
         setSalonPlan(planResult.data as (SalonPlan & { plan: Plan }) | null);
       }
@@ -121,14 +131,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
     setSalon(null);
     setUserRole(null);
+    setUserRoles([]);
     setSalonPlan(null);
   };
 
-  const isAdmin = userRole?.role === 'admin';
+  const isAdmin = userRoles.some(r => r.role === 'admin');
+  const isSuperAdmin = userRoles.some(r => r.role === 'super_admin');
 
   return (
     <AuthContext.Provider value={{ 
-      user, session, profile, salon, userRole, salonPlan, loading, isAdmin,
+      user, session, profile, salon, userRole, userRoles, salonPlan, loading, isAdmin, isSuperAdmin,
       signIn, signUp, signOut, refreshProfile 
     }}>
       {children}
