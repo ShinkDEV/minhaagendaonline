@@ -11,6 +11,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAppointments, useMonthAppointmentCounts } from '@/hooks/useAppointments';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useTimeBlocks, TimeBlock } from '@/hooks/useTimeBlocks';
+import { useAuth } from '@/contexts/AuthContext';
 import { Appointment } from '@/types/database';
 
 const hours = Array.from({ length: 12 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`);
@@ -129,6 +130,7 @@ export default function Agenda() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState<string>('all');
   const navigate = useNavigate();
+  const { trialCancelled } = useAuth();
   
   // Generate all days for the month view (including days from prev/next month to fill the grid)
   const monthStart = startOfMonth(selectedDate);
@@ -318,13 +320,15 @@ export default function Agenda() {
         </Card>
 
         {/* FAB */}
-        <Button
-          size="lg"
-          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg"
-          onClick={() => navigate('/appointments/new')}
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
+        {!trialCancelled && (
+          <Button
+            size="lg"
+            className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg"
+            onClick={() => navigate('/appointments/new')}
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        )}
       </div>
     </AppLayout>
   );

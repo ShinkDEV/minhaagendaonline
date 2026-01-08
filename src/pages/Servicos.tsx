@@ -11,6 +11,7 @@ import { Plus, Clock, DollarSign, MoreVertical, Pencil } from 'lucide-react';
 import { useServices, useCreateService, useUpdateService } from '@/hooks/useServices';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { useTrialBlock } from '@/hooks/useTrialBlock';
 import { Service } from '@/types/database';
 
 export default function Servicos() {
@@ -21,6 +22,7 @@ export default function Servicos() {
   const [price, setPrice] = useState('');
   const { isAdmin } = useAuth();
   const { toast } = useToast();
+  const { trialCancelled, blockAction } = useTrialBlock();
 
   const { data: services = [], isLoading } = useServices();
   const createService = useCreateService();
@@ -56,6 +58,8 @@ export default function Servicos() {
   };
 
   const handleSave = async () => {
+    if (blockAction()) return;
+    
     if (!name.trim()) {
       toast({ variant: 'destructive', title: 'Nome é obrigatório' });
       return;
@@ -90,6 +94,8 @@ export default function Servicos() {
   };
 
   const toggleActive = async (service: Service) => {
+    if (blockAction()) return;
+    
     try {
       await updateService.mutateAsync({
         id: service.id,
@@ -207,7 +213,7 @@ export default function Servicos() {
         </Sheet>
 
         {/* FAB */}
-        {isAdmin && (
+        {isAdmin && !trialCancelled && (
           <Button
             size="lg"
             className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg"

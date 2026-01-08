@@ -21,11 +21,20 @@ import { useClients, useCreateClient } from '@/hooks/useClients';
 import { useActiveServices } from '@/hooks/useServices';
 import { useCreateAppointment } from '@/hooks/useAppointments';
 import { useTimeBlocks, isTimeSlotBlocked } from '@/hooks/useTimeBlocks';
+import { useTrialBlock } from '@/hooks/useTrialBlock';
 import { Service } from '@/types/database';
 
 export default function NewAppointment() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { trialCancelled, blockAction } = useTrialBlock();
+
+  // Redirect if trial is cancelled
+  useEffect(() => {
+    if (trialCancelled) {
+      blockAction();
+    }
+  }, [trialCancelled]);
   
   const [professionalId, setProfessionalId] = useState('');
   const [clientId, setClientId] = useState('');

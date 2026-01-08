@@ -10,6 +10,7 @@ import { Search, Plus, Phone, ChevronRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClients, useCreateClient } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
+import { useTrialBlock } from '@/hooks/useTrialBlock';
 
 export default function Clientes() {
   const [search, setSearch] = useState('');
@@ -19,6 +20,7 @@ export default function Clientes() {
   const [newClientEmail, setNewClientEmail] = useState('');
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { trialCancelled, blockAction } = useTrialBlock();
 
   const { data: clients = [], isLoading } = useClients(search);
   const createClient = useCreateClient();
@@ -28,6 +30,8 @@ export default function Clientes() {
   };
 
   const handleCreateClient = async () => {
+    if (blockAction()) return;
+    
     if (!newClientName.trim()) {
       toast({ variant: 'destructive', title: 'Nome é obrigatório' });
       return;
@@ -144,13 +148,15 @@ export default function Clientes() {
         </Sheet>
 
         {/* FAB */}
-        <Button
-          size="lg"
-          className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg"
-          onClick={() => setShowNewClient(true)}
-        >
-          <Plus className="h-6 w-6" />
-        </Button>
+        {!trialCancelled && (
+          <Button
+            size="lg"
+            className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg"
+            onClick={() => setShowNewClient(true)}
+          >
+            <Plus className="h-6 w-6" />
+          </Button>
+        )}
       </div>
     </AppLayout>
   );

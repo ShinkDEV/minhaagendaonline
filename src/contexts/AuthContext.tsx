@@ -14,6 +14,7 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  trialCancelled: boolean;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -30,7 +31,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [salonPlan, setSalonPlan] = useState<(SalonPlan & { plan: Plan }) | null>(null);
+  const [trialCancelled, setTrialCancelled] = useState(false);
   const [loading, setLoading] = useState(true);
+
+  const checkSubscriptionStatus = async () => {
+    try {
+      const { data, error } = await supabase.functions.invoke('check-subscription');
+      if (!error && data) {
+        setTrialCancelled(data.trial_cancelled === true);
+      }
+    } catch (error) {
+      console.error('Error checking subscription:', error);
+    }
+  };
 
   const fetchUserData = async (userId: string) => {
     try {
@@ -62,6 +75,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setSalon(salonResult.data);
         setSalonPlan(planResult.data as (SalonPlan & { plan: Plan }) | null);
       }
+
+      // Check subscription/trial status
+      await checkSubscriptionStatus();
     } catch (error) {
       console.error('Error fetching user data:', error);
     }
@@ -88,6 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSalon(null);
           setUserRole(null);
           setSalonPlan(null);
+          setTrialCancelled(false);
         }
         
         setLoading(false);
@@ -133,6 +150,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserRole(null);
     setUserRoles([]);
     setSalonPlan(null);
+    setTrialCancelled(false);
   };
 
   const isSuperAdmin = userRoles.some(r => r.role === 'super_admin');
@@ -141,7 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ 
-      user, session, profile, salon, userRole, userRoles, salonPlan, loading, isAdmin, isSuperAdmin,
+      user, session, profile, salon, userRole, userRoles, salonPlan, loading, isAdmin, isSuperAdmin, trialCancelled,
       signIn, signUp, signOut, refreshProfile 
     }}>
       {children}
