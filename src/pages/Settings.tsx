@@ -9,13 +9,14 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Users, LogOut, Save, Plus, UserCog, Percent } from 'lucide-react';
+import { Building2, Users, LogOut, Save, Plus, UserCog, Percent, Scissors } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfessionals, useCreateProfessional, useUpdateProfessional } from '@/hooks/useProfessionals';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Professional } from '@/types/database';
+import { ProfessionalCommissions } from '@/components/ProfessionalCommissions';
 
 export default function Settings() {
   const { salon, profile, salonPlan, isAdmin, signOut, refreshProfile } = useAuth();
@@ -31,6 +32,7 @@ export default function Settings() {
   // Professional form
   const [showNewProfessional, setShowNewProfessional] = useState(false);
   const [editingProfessional, setEditingProfessional] = useState<Professional | null>(null);
+  const [commissionsForProfessional, setCommissionsForProfessional] = useState<Professional | null>(null);
   const [profName, setProfName] = useState('');
   const [profCommission, setProfCommission] = useState('40');
 
@@ -305,7 +307,16 @@ export default function Settings() {
                             <Button 
                               variant="ghost" 
                               size="icon"
+                              onClick={() => setCommissionsForProfessional(prof)}
+                              title="Comissões por serviço"
+                            >
+                              <Scissors className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
                               onClick={() => openEditProfessional(prof)}
+                              title="Editar profissional"
                             >
                               <UserCog className="h-4 w-4" />
                             </Button>
@@ -379,6 +390,14 @@ export default function Settings() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Professional Commissions Sheet */}
+      {commissionsForProfessional && (
+        <ProfessionalCommissions 
+          professional={commissionsForProfessional} 
+          onClose={() => setCommissionsForProfessional(null)} 
+        />
+      )}
     </AppLayout>
   );
 }
