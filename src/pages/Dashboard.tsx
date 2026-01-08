@@ -116,19 +116,11 @@ export default function Dashboard() {
         <AnnouncementBanner />
 
         {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">
-              Olá, {profile?.full_name?.split(' ')[0]}! 👋
-            </h1>
-            <p className="text-muted-foreground text-sm">{salon?.name}</p>
-          </div>
-          {isSuperAdmin && (
-            <Button variant="outline" size="sm" onClick={() => navigate('/super-admin')}>
-              <Crown className="h-4 w-4 mr-2" />
-              Super Admin
-            </Button>
-          )}
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">
+            Olá, {profile?.full_name?.split(' ')[0]}! 👋
+          </h1>
+          <p className="text-muted-foreground text-sm">{salon?.name}</p>
         </div>
 
         {/* Plan info - only for admins */}
