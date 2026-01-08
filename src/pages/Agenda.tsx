@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
+import { format, addDays, addMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
 import { useAppointments } from '@/hooks/useAppointments';
@@ -25,8 +25,18 @@ export default function Agenda() {
   const [selectedProfessional, setSelectedProfessional] = useState<string>('all');
   const navigate = useNavigate();
   
-  const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
-  const weekDays = Array.from({ length: 14 }, (_, i) => addDays(weekStart, i));
+  // Generate all days for the month view (including days from prev/next month to fill the grid)
+  const monthStart = startOfMonth(selectedDate);
+  const monthEnd = endOfMonth(selectedDate);
+  const calendarStart = startOfWeek(monthStart, { weekStartsOn: 0 });
+  const calendarEnd = endOfWeek(monthEnd, { weekStartsOn: 0 });
+  
+  const calendarDays: Date[] = [];
+  let day = calendarStart;
+  while (day <= calendarEnd) {
+    calendarDays.push(day);
+    day = addDays(day, 1);
+  }
 
   const { data: professionals = [] } = useProfessionals();
   const { data: appointments = [] } = useAppointments(
@@ -53,13 +63,13 @@ export default function Agenda() {
       <div className="space-y-4">
         {/* Header with navigation */}
         <div className="flex items-center justify-between">
-          <Button variant="ghost" size="icon" onClick={() => setSelectedDate(addDays(selectedDate, -7))}>
+          <Button variant="ghost" size="icon" onClick={() => setSelectedDate(addMonths(selectedDate, -1))}>
             <ChevronLeft className="h-5 w-5" />
           </Button>
-          <h2 className="text-lg font-semibold text-foreground">
+          <h2 className="text-lg font-semibold text-foreground capitalize">
             {format(selectedDate, "MMMM 'de' yyyy", { locale: ptBR })}
           </h2>
-          <Button variant="ghost" size="icon" onClick={() => setSelectedDate(addDays(selectedDate, 7))}>
+          <Button variant="ghost" size="icon" onClick={() => setSelectedDate(addMonths(selectedDate, 1))}>
             <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
@@ -79,32 +89,46 @@ export default function Agenda() {
           </SelectContent>
         </Select>
 
-        {/* Week days selector */}
-        <div className="flex gap-1 overflow-x-auto pb-2 -mx-4 px-4">
-          {weekDays.map((day) => {
-            const isSelected = isSameDay(day, selectedDate);
-            const isToday = isSameDay(day, new Date());
-            return (
-              <button
-                key={day.toISOString()}
-                onClick={() => setSelectedDate(day)}
-                className={cn(
-                  "flex flex-col items-center min-w-[48px] py-2 px-3 rounded-xl transition-colors touch-manipulation",
-                  isSelected 
-                    ? "bg-primary text-primary-foreground" 
-                    : isToday 
-                      ? "bg-accent text-accent-foreground"
-                      : "bg-secondary text-foreground hover:bg-secondary/80"
-                )}
-              >
-                <span className="text-xs font-medium uppercase">
-                  {format(day, 'EEE', { locale: ptBR })}
-                </span>
-                <span className="text-lg font-bold">{format(day, 'd')}</span>
-              </button>
-            );
-          })}
-        </div>
+        {/* Month calendar grid */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-3">
+            {/* Weekday headers */}
+            <div className="grid grid-cols-7 gap-1 mb-2">
+              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dayName) => (
+                <div key={dayName} className="text-center text-xs font-medium text-muted-foreground py-1">
+                  {dayName}
+                </div>
+              ))}
+            </div>
+            
+            {/* Calendar days */}
+            <div className="grid grid-cols-7 gap-1">
+              {calendarDays.map((day) => {
+                const isSelected = isSameDay(day, selectedDate);
+                const isToday = isSameDay(day, new Date());
+                const isCurrentMonth = isSameMonth(day, selectedDate);
+                return (
+                  <button
+                    key={day.toISOString()}
+                    onClick={() => setSelectedDate(day)}
+                    className={cn(
+                      "aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-colors touch-manipulation",
+                      isSelected 
+                        ? "bg-primary text-primary-foreground" 
+                        : isToday 
+                          ? "bg-accent text-accent-foreground"
+                          : isCurrentMonth
+                            ? "bg-secondary/50 text-foreground hover:bg-secondary"
+                            : "text-muted-foreground/50 hover:bg-secondary/30"
+                    )}
+                  >
+                    {format(day, 'd')}
+                  </button>
+                );
+              })}
+            </div>
+          </CardContent>
+        </Card>
 
         {/* Time grid */}
         <Card className="border-0 shadow-sm overflow-hidden">
