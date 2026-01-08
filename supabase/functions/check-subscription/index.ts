@@ -75,7 +75,7 @@ serve(async (req) => {
         });
       }
 
-      logStep("User has free trial - granting full access", { email: user.email });
+      logStep("User has free trial - granting Basic plan access", { email: user.email });
       
       // Update free trial with user_id and activated_at if not already set
       if (!freeTrial.user_id || !freeTrial.activated_at) {
@@ -88,12 +88,13 @@ serve(async (req) => {
           .eq('id', freeTrial.id);
       }
 
+      // Trial is on Basic plan (1-2 professionals)
       return new Response(JSON.stringify({
         subscribed: true,
         is_free_trial: true,
-        plan_code: 'super',
-        plan_name: 'Teste Gratuito Ilimitado',
-        max_professionals: 999,
+        plan_code: 'basic',
+        plan_name: 'Teste Gratuito (Básico)',
+        max_professionals: 2,
         subscription_end: null, // No expiration
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
