@@ -41,6 +41,45 @@ export function useAppointments(date?: Date, professionalId?: string) {
   });
 }
 
+export function useMonthAppointmentCounts(month: Date, professionalId?: string) {
+  const { salon } = useAuth();
+
+  return useQuery({
+    queryKey: ['appointment-counts', salon?.id, format(month, 'yyyy-MM'), professionalId],
+    queryFn: async () => {
+      if (!salon?.id) return {};
+      
+      const startOfMonth = format(month, 'yyyy-MM') + '-01T00:00:00';
+      const endOfMonth = format(new Date(month.getFullYear(), month.getMonth() + 1, 0), 'yyyy-MM-dd') + 'T23:59:59';
+      
+      let query = supabase
+        .from('appointments')
+        .select('start_at, status')
+        .eq('salon_id', salon.id)
+        .gte('start_at', startOfMonth)
+        .lte('start_at', endOfMonth)
+        .neq('status', 'cancelled');
+      
+      if (professionalId) {
+        query = query.eq('professional_id', professionalId);
+      }
+      
+      const { data, error } = await query;
+      if (error) throw error;
+      
+      // Count appointments per day
+      const counts: Record<string, number> = {};
+      data?.forEach(apt => {
+        const day = format(new Date(apt.start_at), 'yyyy-MM-dd');
+        counts[day] = (counts[day] || 0) + 1;
+      });
+      
+      return counts;
+    },
+    enabled: !!salon?.id,
+  });
+}
+
 export function useAppointment(id: string | undefined) {
   return useQuery({
     queryKey: ['appointment', id],

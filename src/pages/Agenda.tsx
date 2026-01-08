@@ -8,7 +8,7 @@ import { cn } from '@/lib/utils';
 import { format, addDays, addMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameDay, isSameMonth } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useNavigate } from 'react-router-dom';
-import { useAppointments } from '@/hooks/useAppointments';
+import { useAppointments, useMonthAppointmentCounts } from '@/hooks/useAppointments';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { Appointment } from '@/types/database';
 
@@ -40,6 +40,10 @@ export default function Agenda() {
 
   const { data: professionals = [] } = useProfessionals();
   const { data: appointments = [] } = useAppointments(
+    selectedDate,
+    selectedProfessional !== 'all' ? selectedProfessional : undefined
+  );
+  const { data: appointmentCounts = {} } = useMonthAppointmentCounts(
     selectedDate,
     selectedProfessional !== 'all' ? selectedProfessional : undefined
   );
@@ -107,12 +111,14 @@ export default function Agenda() {
                 const isSelected = isSameDay(day, selectedDate);
                 const isToday = isSameDay(day, new Date());
                 const isCurrentMonth = isSameMonth(day, selectedDate);
+                const dayKey = format(day, 'yyyy-MM-dd');
+                const count = appointmentCounts[dayKey] || 0;
                 return (
                   <button
                     key={day.toISOString()}
                     onClick={() => setSelectedDate(day)}
                     className={cn(
-                      "h-7 w-7 flex items-center justify-center rounded text-xs font-medium transition-colors touch-manipulation",
+                      "h-8 w-full flex flex-col items-center justify-center rounded text-xs font-medium transition-colors touch-manipulation relative",
                       isSelected 
                         ? "bg-primary text-primary-foreground" 
                         : isToday 
@@ -123,6 +129,14 @@ export default function Agenda() {
                     )}
                   >
                     {format(day, 'd')}
+                    {count > 0 && isCurrentMonth && (
+                      <span className={cn(
+                        "text-[8px] leading-none",
+                        isSelected ? "text-primary-foreground/80" : "text-muted-foreground"
+                      )}>
+                        {count}
+                      </span>
+                    )}
                   </button>
                 );
               })}
