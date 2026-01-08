@@ -232,7 +232,12 @@ export default function NewAppointment() {
                     )
                     .map((client) => (
                       <SelectItem key={client.id} value={client.id}>
-                        {client.full_name}
+                        <div className="flex flex-col">
+                          <span>{client.full_name}</span>
+                          {client.email && (
+                            <span className="text-xs text-muted-foreground">{client.email}</span>
+                          )}
+                        </div>
                       </SelectItem>
                     ))}
                   {clients.filter(c => 
