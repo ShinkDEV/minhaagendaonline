@@ -50,12 +50,13 @@ function AppRoutes() {
     );
   }
 
-  // Super admin can access their panel AND the regular dashboard
+  // Super admin can access their panel AND the regular dashboard/settings
   if (isSuperAdmin) {
     return (
       <Routes>
         <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/settings" element={<Settings />} />
         <Route path="/" element={<Navigate to="/super-admin" replace />} />
         <Route path="/login" element={<Navigate to="/super-admin" replace />} />
         <Route path="*" element={<Navigate to="/super-admin" replace />} />
