@@ -183,9 +183,9 @@ export default function SuperAdmin() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-+            <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
-+              <ArrowLeft className="h-5 w-5" />
-+            </Button>
+            <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
             <Button variant="ghost" size="icon" onClick={signOut}>
               <LogOut className="h-5 w-5" />
             </Button>
