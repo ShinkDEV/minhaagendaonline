@@ -135,8 +135,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSalonPlan(null);
   };
 
-  const isAdmin = userRoles.some(r => r.role === 'admin');
   const isSuperAdmin = userRoles.some(r => r.role === 'super_admin');
+  // Super admin with a salon is also treated as admin
+  const isAdmin = userRoles.some(r => r.role === 'admin') || (isSuperAdmin && !!profile?.salon_id);
 
   return (
     <AuthContext.Provider value={{ 
