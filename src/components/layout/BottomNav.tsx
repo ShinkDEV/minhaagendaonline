@@ -1,4 +1,4 @@
-import { Calendar, Users, Scissors, LayoutDashboard, BarChart3 } from 'lucide-react';
+import { Calendar, Users, Scissors, LayoutDashboard, Settings } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
@@ -7,7 +7,7 @@ const navItems = [
   { icon: Calendar, label: 'Agenda', path: '/agenda' },
   { icon: Users, label: 'Clientes', path: '/clients' },
   { icon: Scissors, label: 'Serviços', path: '/services' },
-  { icon: BarChart3, label: 'Relatórios', path: '/reports' },
+  { icon: Settings, label: 'Config', path: '/settings' },
 ];
 
 export function BottomNav() {
