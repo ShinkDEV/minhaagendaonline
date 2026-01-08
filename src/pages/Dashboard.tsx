@@ -11,6 +11,9 @@ import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AnnouncementBanner } from '@/components/announcements/AnnouncementBanner';
+import { RevenueChart } from '@/components/dashboard/RevenueChart';
+import { ProfessionalRankingCard } from '@/components/dashboard/ProfessionalRankingCard';
+import { ServiceRankingCard } from '@/components/dashboard/ServiceRankingCard';
 
 export default function Dashboard() {
   const { profile, salon, salonPlan, isAdmin, isSuperAdmin, user } = useAuth();
@@ -167,6 +170,17 @@ export default function Dashboard() {
               <Users className="h-4 w-4 mr-2" />
               Novo Cliente
             </Button>
+          </div>
+        )}
+
+        {/* Charts Section - only for admins */}
+        {isAdmin && (
+          <div className="space-y-4">
+            <RevenueChart />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <ProfessionalRankingCard />
+              <ServiceRankingCard />
+            </div>
           </div>
         )}
 
