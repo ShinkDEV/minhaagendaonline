@@ -243,7 +243,9 @@ export default function Settings() {
                   </Avatar>
                   <div>
                     <div className="font-semibold">{profile?.full_name}</div>
-                    <Badge variant="outline">{isAdmin ? 'Administrador' : 'Profissional'}</Badge>
+                    <Badge variant="outline">
+                      {isAdmin ? 'Dono do Salão' : 'Profissional'}
+                    </Badge>
                   </div>
                 </div>
                 <Button variant="destructive" className="w-full" onClick={handleSignOut}>
