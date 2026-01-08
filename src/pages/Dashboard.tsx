@@ -132,19 +132,17 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="space-y-6">
+      <div className="space-y-4 md:space-y-6 overflow-x-hidden">
         {/* Trial Cancelled Warning */}
         {cancelledTrial && (
           <Alert variant="destructive">
             <XCircle className="h-4 w-4" />
             <AlertTitle>Seu teste gratuito foi encerrado</AlertTitle>
-            <AlertDescription>
-              Seu período de teste gratuito foi cancelado. Para continuar utilizando todas as funcionalidades, 
-              por favor escolha um plano.
+            <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span>Seu período de teste foi cancelado. Para continuar, escolha um plano.</span>
               <Button 
                 variant="outline" 
                 size="sm" 
-                className="ml-2 mt-2"
                 onClick={() => navigate('/upgrade')}
               >
                 Ver planos
@@ -158,24 +156,24 @@ export default function Dashboard() {
 
         {/* Header */}
         <div>
-          <h1 className="text-2xl font-bold text-foreground">
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">
             Olá, {profile?.full_name?.split(' ')[0]}! 👋
           </h1>
-          <p className="text-muted-foreground text-sm">{salon?.name}</p>
+          <p className="text-muted-foreground text-sm truncate">{salon?.name}</p>
         </div>
 
         {/* Plan info - only for admins */}
         {isAdmin && salonPlan && (
           <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-4 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-primary" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Plano: {salonPlan.plan.name}</p>
+            <CardContent className="p-3 md:p-4 flex items-center gap-3">
+              <AlertCircle className="h-5 w-5 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium truncate">Plano: {salonPlan.plan.name}</p>
                 <p className="text-xs text-muted-foreground">
                   Até {salonPlan.plan.max_professionals} profissionais
                 </p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => navigate('/plans')}>
+              <Button variant="outline" size="sm" className="shrink-0" onClick={() => navigate('/plans')}>
                 Ver planos
               </Button>
             </CardContent>
@@ -183,15 +181,15 @@ export default function Dashboard() {
         )}
 
         {/* Stats Grid */}
-        <div className={`grid gap-3 ${isAdmin ? 'grid-cols-2' : 'grid-cols-3'}`}>
+        <div className={`grid gap-2 md:gap-3 ${isAdmin ? 'grid-cols-2' : 'grid-cols-3'}`}>
           {stats.map((stat) => (
             <Card key={stat.label} className="border-0 shadow-sm">
-              <CardContent className="p-4">
-                <div className={`h-10 w-10 rounded-xl ${stat.color} flex items-center justify-center mb-3`}>
-                  <stat.icon className="h-5 w-5" />
+              <CardContent className="p-3 md:p-4">
+                <div className={`h-8 w-8 md:h-10 md:w-10 rounded-lg md:rounded-xl ${stat.color} flex items-center justify-center mb-2 md:mb-3`}>
+                  <stat.icon className="h-4 w-4 md:h-5 md:w-5" />
                 </div>
-                <div className="text-2xl font-bold text-foreground">{stat.value}</div>
-                <div className="text-xs text-muted-foreground">{stat.sublabel}</div>
+                <div className="text-lg md:text-2xl font-bold text-foreground truncate">{stat.value}</div>
+                <div className="text-[10px] md:text-xs text-muted-foreground truncate">{stat.sublabel}</div>
               </CardContent>
             </Card>
           ))}
@@ -199,12 +197,12 @@ export default function Dashboard() {
 
         {/* Quick Actions - only for admins */}
         {isAdmin && (
-          <div className="flex gap-3">
-            <Button className="flex-1 h-12" onClick={() => navigate('/appointments/new')}>
+          <div className="flex flex-col sm:flex-row gap-2 md:gap-3">
+            <Button className="flex-1 h-11 md:h-12 text-sm" onClick={() => navigate('/appointments/new')}>
               <Plus className="h-4 w-4 mr-2" />
               Novo Agendamento
             </Button>
-            <Button variant="outline" className="flex-1 h-12" onClick={() => navigate('/clients')}>
+            <Button variant="outline" className="flex-1 h-11 md:h-12 text-sm" onClick={() => navigate('/clients')}>
               <Users className="h-4 w-4 mr-2" />
               Novo Cliente
             </Button>
@@ -213,12 +211,12 @@ export default function Dashboard() {
 
         {/* Charts Section - only for admins */}
         {isAdmin && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-3 md:space-y-4">
+            <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-2">
               <RevenueChart />
               <CancellationChart />
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-2">
               <ProfessionalRankingCard />
               <ServiceRankingCard />
             </div>
@@ -227,12 +225,12 @@ export default function Dashboard() {
 
         {/* Today's Appointments */}
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold">
+          <CardContent className="p-3 md:p-4">
+            <div className="flex items-center justify-between mb-3 md:mb-4">
+              <h2 className="font-semibold text-sm md:text-base">
                 {isAdmin ? 'Próximos Atendimentos' : 'Meus Atendimentos de Hoje'}
               </h2>
-              <Button variant="ghost" size="sm" onClick={() => navigate('/agenda')}>
+              <Button variant="ghost" size="sm" className="text-xs md:text-sm" onClick={() => navigate('/agenda')}>
                 Ver agenda
               </Button>
             </div>
@@ -242,28 +240,28 @@ export default function Dashboard() {
                 Nenhum agendamento para hoje
               </p>
             ) : (
-              <div className="divide-y divide-border -mx-4">
+              <div className="divide-y divide-border -mx-3 md:-mx-4">
                 {confirmedToday.slice(0, 5).map((apt) => (
                   <div 
                     key={apt.id} 
-                    className="flex items-center gap-4 px-4 py-3 cursor-pointer hover:bg-muted/50"
+                    className="flex items-center gap-3 md:gap-4 px-3 md:px-4 py-2.5 md:py-3 cursor-pointer hover:bg-muted/50 active:bg-muted"
                     onClick={() => navigate(`/appointments/${apt.id}`)}
                   >
-                    <div className="text-center min-w-[50px]">
-                      <div className="text-sm font-semibold text-foreground">
+                    <div className="text-center min-w-[40px] md:min-w-[50px]">
+                      <div className="text-xs md:text-sm font-semibold text-foreground">
                         {format(new Date(apt.start_at), 'HH:mm')}
                       </div>
                     </div>
                     <div className="flex-1 min-w-0">
-                      <div className="font-medium text-foreground truncate">
+                      <div className="font-medium text-sm md:text-base text-foreground truncate">
                         {apt.client?.full_name || 'Cliente não informado'}
                       </div>
-                      <div className="text-sm text-muted-foreground truncate">
+                      <div className="text-xs md:text-sm text-muted-foreground truncate">
                         {apt.appointment_services?.map(s => s.service?.name).join(', ')}
                       </div>
                     </div>
                     {isAdmin && (
-                      <div className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+                      <div className="text-[10px] md:text-xs text-muted-foreground bg-secondary px-1.5 md:px-2 py-0.5 md:py-1 rounded-full truncate max-w-[80px] md:max-w-none">
                         {apt.professional?.display_name}
                       </div>
                     )}
