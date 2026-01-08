@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, useRef, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Profile, UserRole, Salon, SalonPlan, Plan } from '@/types/database';
@@ -28,9 +28,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [salonPlan, setSalonPlan] = useState<(SalonPlan & { plan: Plan }) | null>(null);
   const [loading, setLoading] = useState(true);
+  const setupInProgress = useRef(false);
 
-  const setupNewUser = async (userId: string) => {
+  const setupNewUser = async (userId: string, userEmail?: string, fullName?: string) => {
+    if (setupInProgress.current) return null;
+    setupInProgress.current = true;
+
     try {
+      console.log('Setting up new user:', userId);
+      
       // Get the free plan
       const { data: freePlan } = await supabase
         .from('plans')
@@ -40,11 +46,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (!freePlan) {
         console.error('Free plan not found');
+        setupInProgress.current = false;
         return null;
       }
 
       // Create salon
-      const { data: salon, error: salonError } = await supabase
+      const { data: newSalon, error: salonError } = await supabase
         .from('salons')
         .insert({ name: 'Meu Salão' })
         .select()
@@ -52,44 +59,66 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       if (salonError) {
         console.error('Error creating salon:', salonError);
+        setupInProgress.current = false;
         return null;
       }
 
+      console.log('Salon created:', newSalon.id);
+
       // Update profile with salon_id
-      await supabase
+      const { error: profileError } = await supabase
         .from('profiles')
-        .update({ salon_id: salon.id })
+        .update({ salon_id: newSalon.id })
         .eq('id', userId);
 
+      if (profileError) {
+        console.error('Error updating profile:', profileError);
+      }
+
       // Add admin role
-      await supabase
+      const { error: roleError } = await supabase
         .from('user_roles')
         .insert({ user_id: userId, role: 'admin' });
 
+      if (roleError) {
+        console.error('Error creating role:', roleError);
+      }
+
       // Create salon plan
-      await supabase
+      const { error: planError } = await supabase
         .from('salon_plan')
-        .insert({ salon_id: salon.id, plan_id: freePlan.id });
+        .insert({ salon_id: newSalon.id, plan_id: freePlan.id });
+
+      if (planError) {
+        console.error('Error creating salon plan:', planError);
+      }
 
       // Create user as professional
-      const { data: userData } = await supabase.auth.getUser();
-      await supabase
+      const displayName = fullName || userEmail?.split('@')[0] || 'Admin';
+      const { error: profError } = await supabase
         .from('professionals')
         .insert({
-          salon_id: salon.id,
+          salon_id: newSalon.id,
           profile_id: userId,
-          display_name: userData.user?.user_metadata?.full_name || userData.user?.email?.split('@')[0] || 'Admin',
+          display_name: displayName,
           commission_percent_default: 0,
         });
 
-      return salon;
+      if (profError) {
+        console.error('Error creating professional:', profError);
+      }
+
+      console.log('User setup complete');
+      setupInProgress.current = false;
+      return newSalon;
     } catch (error) {
       console.error('Error setting up new user:', error);
+      setupInProgress.current = false;
       return null;
     }
   };
 
-  const fetchUserData = async (userId: string) => {
+  const fetchUserData = async (userId: string, userEmail?: string, fullName?: string) => {
     try {
       // Fetch profile
       const { data: profileData } = await supabase
@@ -100,40 +129,56 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       
       setProfile(profileData);
 
-      // Fetch user role
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('*')
-        .eq('user_id', userId)
-        .maybeSingle();
-      
-      setUserRole(roleData);
-
-      // Check if user has salon, if not create one
+      // Check if user has salon
       if (profileData?.salon_id) {
+        // User has salon - fetch all data
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('*')
+          .eq('user_id', userId)
+          .maybeSingle();
+        setUserRole(roleData);
+
         const { data: salonData } = await supabase
           .from('salons')
           .select('*')
           .eq('id', profileData.salon_id)
           .maybeSingle();
-        
         setSalon(salonData);
 
-        // Fetch salon plan
         const { data: planData } = await supabase
           .from('salon_plan')
           .select('*, plan:plans(*)')
           .eq('salon_id', profileData.salon_id)
           .maybeSingle();
-        
         setSalonPlan(planData as (SalonPlan & { plan: Plan }) | null);
       } else {
         // New user - setup automatically
-        const newSalon = await setupNewUser(userId);
+        const newSalon = await setupNewUser(userId, userEmail, fullName);
         if (newSalon) {
           setSalon(newSalon);
-          // Refetch all data after setup
-          await fetchUserData(userId);
+          
+          // Fetch the newly created data
+          const { data: updatedProfile } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', userId)
+            .maybeSingle();
+          setProfile(updatedProfile);
+
+          const { data: roleData } = await supabase
+            .from('user_roles')
+            .select('*')
+            .eq('user_id', userId)
+            .maybeSingle();
+          setUserRole(roleData);
+
+          const { data: planData } = await supabase
+            .from('salon_plan')
+            .select('*, plan:plans(*)')
+            .eq('salon_id', newSalon.id)
+            .maybeSingle();
+          setSalonPlan(planData as (SalonPlan & { plan: Plan }) | null);
         }
       }
     } catch (error) {
@@ -143,7 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const refreshProfile = async () => {
     if (user) {
-      await fetchUserData(user.id);
+      await fetchUserData(user.id, user.email || undefined, user.user_metadata?.full_name);
     }
   };
 
@@ -154,7 +199,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(session?.user ?? null);
         
         if (session?.user) {
-          await fetchUserData(session.user.id);
+          await fetchUserData(
+            session.user.id, 
+            session.user.email || undefined,
+            session.user.user_metadata?.full_name
+          );
         } else {
           setProfile(null);
           setSalon(null);
@@ -171,7 +220,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(session?.user ?? null);
       
       if (session?.user) {
-        await fetchUserData(session.user.id);
+        await fetchUserData(
+          session.user.id,
+          session.user.email || undefined,
+          session.user.user_metadata?.full_name
+        );
       }
       
       setLoading(false);
