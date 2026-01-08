@@ -50,6 +50,40 @@ serve(async (req) => {
     if (!user?.email) throw new Error("User not authenticated or email not available");
     logStep("User authenticated", { userId: user.id, email: user.email });
 
+    // Check if user has a free trial (unlimited)
+    const { data: freeTrial } = await supabaseClient
+      .from('free_trial_users')
+      .select('*')
+      .eq('email', user.email)
+      .maybeSingle();
+
+    if (freeTrial) {
+      logStep("User has free trial - granting full access", { email: user.email });
+      
+      // Update free trial with user_id and activated_at if not already set
+      if (!freeTrial.user_id || !freeTrial.activated_at) {
+        await supabaseClient
+          .from('free_trial_users')
+          .update({ 
+            user_id: user.id, 
+            activated_at: freeTrial.activated_at || new Date().toISOString() 
+          })
+          .eq('id', freeTrial.id);
+      }
+
+      return new Response(JSON.stringify({
+        subscribed: true,
+        is_free_trial: true,
+        plan_code: 'super',
+        plan_name: 'Teste Gratuito Ilimitado',
+        max_professionals: 999,
+        subscription_end: null, // No expiration
+      }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        status: 200,
+      });
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     const customers = await stripe.customers.list({ email: user.email, limit: 1 });
 

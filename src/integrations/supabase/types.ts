@@ -375,6 +375,36 @@ export type Database = {
           },
         ]
       }
+      free_trial_users: {
+        Row: {
+          activated_at: string | null
+          created_at: string
+          email: string
+          id: string
+          invited_by: string | null
+          notes: string | null
+          user_id: string | null
+        }
+        Insert: {
+          activated_at?: string | null
+          created_at?: string
+          email: string
+          id?: string
+          invited_by?: string | null
+          notes?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          activated_at?: string | null
+          created_at?: string
+          email?: string
+          id?: string
+          invited_by?: string | null
+          notes?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       invitations: {
         Row: {
           accepted_at: string | null
