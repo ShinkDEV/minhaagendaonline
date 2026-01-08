@@ -107,6 +107,89 @@ serve(async (req) => {
       endDate: subscriptionEnd 
     });
 
+    // Check if user already has a salon
+    const { data: profile } = await supabaseClient
+      .from('profiles')
+      .select('salon_id')
+      .eq('id', user.id)
+      .single();
+
+    let salonId = profile?.salon_id;
+
+    // If user has active subscription but no salon, create one and make them admin
+    if (!salonId) {
+      logStep("User has subscription but no salon - creating salon and assigning admin role");
+
+      // Create salon using user's name or email
+      const salonName = user.user_metadata?.full_name 
+        ? `Salão de ${user.user_metadata.full_name}` 
+        : `Salão ${user.email?.split('@')[0]}`;
+
+      const { data: newSalon, error: salonError } = await supabaseClient
+        .from('salons')
+        .insert({ name: salonName })
+        .select()
+        .single();
+
+      if (salonError) {
+        logStep("Error creating salon", { error: salonError.message });
+        throw new Error(`Failed to create salon: ${salonError.message}`);
+      }
+
+      salonId = newSalon.id;
+      logStep("Salon created", { salonId, salonName });
+
+      // Update user profile with salon_id
+      const { error: profileError } = await supabaseClient
+        .from('profiles')
+        .update({ salon_id: salonId })
+        .eq('id', user.id);
+
+      if (profileError) {
+        logStep("Error updating profile", { error: profileError.message });
+      }
+
+      // Assign admin role to user
+      const { error: roleError } = await supabaseClient
+        .from('user_roles')
+        .upsert({ 
+          user_id: user.id, 
+          role: 'admin' 
+        }, { 
+          onConflict: 'user_id,role' 
+        });
+
+      if (roleError) {
+        logStep("Error assigning admin role", { error: roleError.message });
+      } else {
+        logStep("Admin role assigned to user");
+      }
+
+      // Link salon to plan
+      const { data: planData } = await supabaseClient
+        .from('plans')
+        .select('id')
+        .eq('code', planInfo.code)
+        .single();
+
+      if (planData) {
+        const { error: salonPlanError } = await supabaseClient
+          .from('salon_plan')
+          .upsert({
+            salon_id: salonId,
+            plan_id: planData.id,
+          }, {
+            onConflict: 'salon_id'
+          });
+
+        if (salonPlanError) {
+          logStep("Error linking salon to plan", { error: salonPlanError.message });
+        } else {
+          logStep("Salon linked to plan", { planCode: planInfo.code });
+        }
+      }
+    }
+
     return new Response(JSON.stringify({
       subscribed: true,
       plan_code: planInfo.code,
@@ -114,6 +197,7 @@ serve(async (req) => {
       max_professionals: planInfo.maxProfessionals,
       subscription_end: subscriptionEnd,
       product_id: productId,
+      salon_id: salonId,
     }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
       status: 200,
