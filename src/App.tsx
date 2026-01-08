@@ -50,16 +50,25 @@ function AppRoutes() {
     );
   }
 
-  // Super admin can access their panel AND the regular dashboard/settings
+  // Super admin can access their panel AND all regular routes
   if (isSuperAdmin) {
     return (
       <Routes>
         <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/agenda" element={<Agenda />} />
+        <Route path="/appointments/:id" element={<AppointmentDetail />} />
+        <Route path="/appointments/new" element={<NewAppointment />} />
+        <Route path="/clients" element={<Clientes />} />
+        <Route path="/services" element={<Servicos />} />
+        <Route path="/financial" element={<Financeiro />} />
+        <Route path="/reports" element={<Reports />} />
         <Route path="/settings" element={<Settings />} />
-        <Route path="/" element={<Navigate to="/super-admin" replace />} />
-        <Route path="/login" element={<Navigate to="/super-admin" replace />} />
-        <Route path="*" element={<Navigate to="/super-admin" replace />} />
+        <Route path="/my-commissions" element={<MyCommissions />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     );
   }
