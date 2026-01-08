@@ -21,6 +21,7 @@ import CommissionsReport from "./pages/CommissionsReport";
 import AcceptInvite from "./pages/AcceptInvite";
 import Profile from "./pages/Profile";
 import Upgrade from "./pages/Upgrade";
+import TrialRegister from "./pages/TrialRegister";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ function AppRoutes() {
       <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/invite/:token" element={<AcceptInvite />} />
+        <Route path="/trial-register/:code" element={<TrialRegister />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );

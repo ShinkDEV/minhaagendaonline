@@ -381,6 +381,7 @@ export type Database = {
           created_at: string
           email: string
           id: string
+          invite_link_id: string | null
           invited_by: string | null
           notes: string | null
           user_id: string | null
@@ -390,6 +391,7 @@ export type Database = {
           created_at?: string
           email: string
           id?: string
+          invite_link_id?: string | null
           invited_by?: string | null
           notes?: string | null
           user_id?: string | null
@@ -399,11 +401,20 @@ export type Database = {
           created_at?: string
           email?: string
           id?: string
+          invite_link_id?: string | null
           invited_by?: string | null
           notes?: string | null
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "free_trial_users_invite_link_id_fkey"
+            columns: ["invite_link_id"]
+            isOneToOne: false
+            referencedRelation: "trial_invite_links"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invitations: {
         Row: {
@@ -813,6 +824,36 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trial_invite_links: {
+        Row: {
+          active: boolean
+          code: string
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          usage_count: number
+        }
+        Insert: {
+          active?: boolean
+          code: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          usage_count?: number
+        }
+        Update: {
+          active?: boolean
+          code?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          usage_count?: number
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {
