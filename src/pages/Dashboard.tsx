@@ -1,7 +1,7 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, DollarSign, Clock, Plus, TrendingUp, AlertCircle } from 'lucide-react';
+import { Calendar, Users, DollarSign, Clock, Plus, TrendingUp, AlertCircle, Crown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useAppointments } from '@/hooks/useAppointments';
@@ -12,7 +12,7 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function Dashboard() {
-  const { profile, salon, salonPlan, isAdmin, user } = useAuth();
+  const { profile, salon, salonPlan, isAdmin, isSuperAdmin, user } = useAuth();
   const navigate = useNavigate();
   const today = new Date();
   
@@ -112,11 +112,19 @@ export default function Dashboard() {
     <AppLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-foreground">
-            Olá, {profile?.full_name?.split(' ')[0]}! 👋
-          </h1>
-          <p className="text-muted-foreground text-sm">{salon?.name}</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              Olá, {profile?.full_name?.split(' ')[0]}! 👋
+            </h1>
+            <p className="text-muted-foreground text-sm">{salon?.name}</p>
+          </div>
+          {isSuperAdmin && (
+            <Button variant="outline" size="sm" onClick={() => navigate('/super-admin')}>
+              <Crown className="h-4 w-4 mr-2" />
+              Super Admin
+            </Button>
+          )}
         </div>
 
         {/* Plan info - only for admins */}
