@@ -10,6 +10,7 @@ import Agenda from "./pages/Agenda";
 import NewAppointment from "./pages/NewAppointment";
 import AppointmentDetail from "./pages/AppointmentDetail";
 import Clientes from "./pages/Clientes";
+import ClientDetail from "./pages/ClientDetail";
 import Servicos from "./pages/Servicos";
 import Financeiro from "./pages/Financeiro";
 import Reports from "./pages/Reports";
@@ -60,6 +61,7 @@ function AppRoutes() {
         <Route path="/appointments/:id" element={<AppointmentDetail />} />
         <Route path="/appointments/new" element={<NewAppointment />} />
         <Route path="/clients" element={<Clientes />} />
+        <Route path="/clients/:id" element={<ClientDetail />} />
         <Route path="/services" element={<Servicos />} />
         <Route path="/financial" element={<Financeiro />} />
         <Route path="/reports" element={<Reports />} />
@@ -89,6 +91,7 @@ function AppRoutes() {
       {/* Admin-only routes */}
       <Route path="/appointments/new" element={<AdminRoute><NewAppointment /></AdminRoute>} />
       <Route path="/clients" element={<AdminRoute><Clientes /></AdminRoute>} />
+      <Route path="/clients/:id" element={<AdminRoute><ClientDetail /></AdminRoute>} />
       <Route path="/clientes" element={<Navigate to="/clients" replace />} />
       <Route path="/services" element={<AdminRoute><Servicos /></AdminRoute>} />
       <Route path="/servicos" element={<Navigate to="/services" replace />} />
