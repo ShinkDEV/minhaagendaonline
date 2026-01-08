@@ -13,6 +13,7 @@ import AppointmentDetail from "./pages/AppointmentDetail";
 import Clientes from "./pages/Clientes";
 import Servicos from "./pages/Servicos";
 import Financeiro from "./pages/Financeiro";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -28,7 +29,6 @@ function AppRoutes() {
     );
   }
 
-  // Not logged in
   if (!user) {
     return (
       <Routes>
@@ -38,7 +38,6 @@ function AppRoutes() {
     );
   }
 
-  // Logged in but no salon (needs onboarding)
   if (!salon) {
     return (
       <Routes>
@@ -48,7 +47,6 @@ function AppRoutes() {
     );
   }
 
-  // Full app access
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -63,6 +61,7 @@ function AppRoutes() {
       <Route path="/services" element={<Servicos />} />
       <Route path="/servicos" element={<Navigate to="/services" replace />} />
       <Route path="/financial" element={<Financeiro />} />
+      <Route path="/settings" element={<Settings />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
