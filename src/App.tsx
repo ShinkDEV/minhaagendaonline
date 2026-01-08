@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import Login from "./pages/Login";
-import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Agenda from "./pages/Agenda";
 import NewAppointment from "./pages/NewAppointment";
@@ -20,7 +19,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function AppRoutes() {
-  const { user, salon, loading } = useAuth();
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
@@ -39,20 +38,10 @@ function AppRoutes() {
     );
   }
 
-  if (!salon) {
-    return (
-      <Routes>
-        <Route path="/onboarding" element={<Onboarding />} />
-        <Route path="*" element={<Navigate to="/onboarding" replace />} />
-      </Routes>
-    );
-  }
-
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/onboarding" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/agenda" element={<Agenda />} />
       <Route path="/appointments/new" element={<NewAppointment />} />
