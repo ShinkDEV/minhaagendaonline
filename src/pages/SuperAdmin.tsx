@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,7 +17,8 @@ import {
   Crown, 
   Calendar,
   LogOut,
-  RefreshCw
+  RefreshCw,
+  ArrowLeft
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
@@ -39,6 +40,7 @@ interface SalonWithDetails {
 export default function SuperAdmin() {
   const { isSuperAdmin, signOut } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [search, setSearch] = useState('');
   const [selectedSalon, setSelectedSalon] = useState<SalonWithDetails | null>(null);
   const [showDetails, setShowDetails] = useState(false);
@@ -180,9 +182,14 @@ export default function SuperAdmin() {
               <p className="text-[10px] text-muted-foreground">Gerenciamento de clientes</p>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={signOut}>
-            <LogOut className="h-5 w-5" />
-          </Button>
+          <div className="flex items-center gap-2">
++            <Button variant="ghost" size="icon" onClick={() => navigate('/dashboard')}>
++              <ArrowLeft className="h-5 w-5" />
++            </Button>
+            <Button variant="ghost" size="icon" onClick={signOut}>
+              <LogOut className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
       </header>
 
