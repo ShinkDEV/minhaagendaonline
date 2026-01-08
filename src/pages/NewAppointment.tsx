@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ArrowLeft, CalendarIcon, Plus, User } from 'lucide-react';
+import { ArrowLeft, CalendarIcon, Plus, Search, User } from 'lucide-react';
 import { format, addMinutes, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -37,6 +37,7 @@ export default function NewAppointment() {
   const [newClientPhone, setNewClientPhone] = useState('');
   const [showNewClient, setShowNewClient] = useState(false);
   const [discount, setDiscount] = useState<string>('');
+  const [serviceSearch, setServiceSearch] = useState('');
 
   const { data: professionals = [] } = useProfessionals();
   const { data: clients = [] } = useClients();
@@ -271,8 +272,21 @@ export default function NewAppointment() {
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <Label className="mb-3 block">Serviços *</Label>
-            <div className="space-y-2">
-              {services.map((service) => (
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar serviço..."
+                value={serviceSearch}
+                onChange={(e) => setServiceSearch(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+            <div className="space-y-2 max-h-64 overflow-y-auto">
+              {services
+                .filter(service => 
+                  service.name.toLowerCase().includes(serviceSearch.toLowerCase())
+                )
+                .map((service) => (
                 <div
                   key={service.id}
                   className={cn(
@@ -298,6 +312,11 @@ export default function NewAppointment() {
                   </div>
                 </div>
               ))}
+              {services.filter(s => s.name.toLowerCase().includes(serviceSearch.toLowerCase())).length === 0 && (
+                <div className="text-center py-4 text-muted-foreground text-sm">
+                  Nenhum serviço encontrado
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
