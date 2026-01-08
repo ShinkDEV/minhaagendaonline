@@ -39,6 +39,7 @@ export default function NewAppointment() {
   const [discount, setDiscount] = useState<string>('');
   const [serviceSearch, setServiceSearch] = useState('');
   const [clientSearch, setClientSearch] = useState('');
+  const [professionalSearch, setProfessionalSearch] = useState('');
 
   const { data: professionals = [] } = useProfessionals();
   const { data: clients = [] } = useClients();
@@ -161,11 +162,33 @@ export default function NewAppointment() {
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  {professionals.map((prof) => (
-                    <SelectItem key={prof.id} value={prof.id}>
-                      {prof.display_name}
-                    </SelectItem>
-                  ))}
+                  <div className="p-2">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar profissional..."
+                        value={professionalSearch}
+                        onChange={(e) => setProfessionalSearch(e.target.value)}
+                        className="pl-8 h-8"
+                      />
+                    </div>
+                  </div>
+                  {professionals
+                    .filter(prof => 
+                      prof.display_name.toLowerCase().includes(professionalSearch.toLowerCase())
+                    )
+                    .map((prof) => (
+                      <SelectItem key={prof.id} value={prof.id}>
+                        {prof.display_name}
+                      </SelectItem>
+                    ))}
+                  {professionals.filter(p => 
+                    p.display_name.toLowerCase().includes(professionalSearch.toLowerCase())
+                  ).length === 0 && (
+                    <div className="py-2 px-3 text-sm text-muted-foreground text-center">
+                      Nenhum profissional encontrado
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
