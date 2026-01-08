@@ -38,6 +38,7 @@ export default function NewAppointment() {
   const [showNewClient, setShowNewClient] = useState(false);
   const [discount, setDiscount] = useState<string>('');
   const [serviceSearch, setServiceSearch] = useState('');
+  const [clientSearch, setClientSearch] = useState('');
 
   const { data: professionals = [] } = useProfessionals();
   const { data: clients = [] } = useClients();
@@ -213,11 +214,35 @@ export default function NewAppointment() {
                   <SelectValue placeholder="Selecione (opcional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  {clients.map((client) => (
-                    <SelectItem key={client.id} value={client.id}>
-                      {client.full_name}
-                    </SelectItem>
-                  ))}
+                  <div className="p-2">
+                    <div className="relative">
+                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar cliente..."
+                        value={clientSearch}
+                        onChange={(e) => setClientSearch(e.target.value)}
+                        className="pl-8 h-8"
+                      />
+                    </div>
+                  </div>
+                  {clients
+                    .filter(client => 
+                      client.full_name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                      (client.phone && client.phone.includes(clientSearch))
+                    )
+                    .map((client) => (
+                      <SelectItem key={client.id} value={client.id}>
+                        {client.full_name}
+                      </SelectItem>
+                    ))}
+                  {clients.filter(c => 
+                    c.full_name.toLowerCase().includes(clientSearch.toLowerCase()) ||
+                    (c.phone && c.phone.includes(clientSearch))
+                  ).length === 0 && (
+                    <div className="py-2 px-3 text-sm text-muted-foreground text-center">
+                      Nenhum cliente encontrado
+                    </div>
+                  )}
                 </SelectContent>
               </Select>
             </div>
