@@ -58,6 +58,23 @@ serve(async (req) => {
       .maybeSingle();
 
     if (freeTrial) {
+      // Check if trial was cancelled
+      if (freeTrial.cancelled_at) {
+        logStep("User's free trial was cancelled", { email: user.email, cancelled_at: freeTrial.cancelled_at });
+        return new Response(JSON.stringify({
+          subscribed: false,
+          plan_code: 'free',
+          plan_name: 'Plano Gratuito',
+          max_professionals: 1,
+          subscription_end: null,
+          trial_cancelled: true,
+          trial_cancelled_at: freeTrial.cancelled_at,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
       logStep("User has free trial - granting full access", { email: user.email });
       
       // Update free trial with user_id and activated_at if not already set

@@ -378,6 +378,7 @@ export type Database = {
       free_trial_users: {
         Row: {
           activated_at: string | null
+          cancelled_at: string | null
           created_at: string
           email: string
           id: string
@@ -388,6 +389,7 @@ export type Database = {
         }
         Insert: {
           activated_at?: string | null
+          cancelled_at?: string | null
           created_at?: string
           email: string
           id?: string
@@ -398,6 +400,7 @@ export type Database = {
         }
         Update: {
           activated_at?: string | null
+          cancelled_at?: string | null
           created_at?: string
           email?: string
           id?: string
