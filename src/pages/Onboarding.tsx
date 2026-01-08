@@ -6,52 +6,40 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { Calendar, Check, Users } from 'lucide-react';
+import { Calendar, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useQuery } from '@tanstack/react-query';
 
-const steps = ['salon', 'plan', 'complete'];
+const steps = ['salon', 'complete'];
 
 export default function Onboarding() {
   const [step, setStep] = useState(0);
   const [salonName, setSalonName] = useState('');
   const [salonPhone, setSalonPhone] = useState('');
   const [salonAddress, setSalonAddress] = useState('');
-  const [selectedPlan, setSelectedPlan] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-
-  const { data: plans } = useQuery({
-    queryKey: ['plans'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('plans')
-        .select('*')
-        .order('max_professionals');
-      if (error) throw error;
-      return data;
-    },
-  });
 
   const handleCreateSalon = async () => {
     if (!salonName.trim()) {
       toast({ variant: 'destructive', title: 'Nome do salão é obrigatório' });
       return;
     }
-    setStep(1);
-  };
-
-  const handleSelectPlan = async () => {
-    if (!selectedPlan) {
-      toast({ variant: 'destructive', title: 'Selecione um plano' });
-      return;
-    }
     
     setLoading(true);
     try {
+      // Get the free plan
+      const { data: freePlan, error: planFetchError } = await supabase
+        .from('plans')
+        .select('id')
+        .eq('code', 'free')
+        .single();
+      
+      if (planFetchError || !freePlan) {
+        throw new Error('Plano gratuito não encontrado');
+      }
+
       // Create salon
       const { data: salon, error: salonError } = await supabase
         .from('salons')
@@ -65,12 +53,12 @@ export default function Onboarding() {
       
       if (salonError) throw salonError;
 
-      // Create salon plan
+      // Create salon plan with free plan
       const { error: planError } = await supabase
         .from('salon_plan')
         .insert({
           salon_id: salon.id,
-          plan_id: selectedPlan,
+          plan_id: freePlan.id,
         });
       
       if (planError) throw planError;
@@ -106,7 +94,7 @@ export default function Onboarding() {
       if (profError) throw profError;
 
       await refreshProfile();
-      setStep(2);
+      setStep(1);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Erro ao criar salão', description: error.message });
     } finally {
@@ -174,8 +162,8 @@ export default function Onboarding() {
                   onChange={(e) => setSalonAddress(e.target.value)}
                 />
               </div>
-              <Button className="w-full" onClick={handleCreateSalon}>
-                Próximo
+              <Button className="w-full" onClick={handleCreateSalon} disabled={loading}>
+                {loading ? 'Criando...' : 'Criar Salão'}
               </Button>
             </CardContent>
           </Card>
@@ -183,40 +171,12 @@ export default function Onboarding() {
 
         {step === 1 && (
           <Card>
-            <CardHeader>
-              <CardTitle>Escolha seu Plano</CardTitle>
-              <CardDescription>Selecione o plano ideal para seu salão</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <RadioGroup value={selectedPlan} onValueChange={setSelectedPlan}>
-                {plans?.map((plan) => (
-                  <div key={plan.id} className="flex items-center space-x-3 p-4 rounded-lg border border-border hover:border-primary transition-colors">
-                    <RadioGroupItem value={plan.id} id={plan.id} />
-                    <Label htmlFor={plan.id} className="flex-1 cursor-pointer">
-                      <div className="font-semibold">{plan.name}</div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-1">
-                        <Users className="h-3 w-3" />
-                        Até {plan.max_professionals} profissionais
-                      </div>
-                    </Label>
-                  </div>
-                ))}
-              </RadioGroup>
-              <Button className="w-full" onClick={handleSelectPlan} disabled={loading}>
-                {loading ? 'Criando...' : 'Criar Salão'}
-              </Button>
-            </CardContent>
-          </Card>
-        )}
-
-        {step === 2 && (
-          <Card>
             <CardHeader className="text-center">
               <div className="mx-auto h-16 w-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
                 <Check className="h-8 w-8 text-green-600" />
               </div>
               <CardTitle>Salão Criado!</CardTitle>
-              <CardDescription>Seu salão está pronto para uso</CardDescription>
+              <CardDescription>Seu salão está pronto para uso com o plano Gratuito</CardDescription>
             </CardHeader>
             <CardContent>
               <Button className="w-full" onClick={handleComplete}>
