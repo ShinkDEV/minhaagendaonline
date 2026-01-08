@@ -91,18 +91,18 @@ export default function Agenda() {
 
         {/* Month calendar grid */}
         <Card className="border-0 shadow-sm">
-          <CardContent className="p-3">
+          <CardContent className="p-2">
             {/* Weekday headers */}
-            <div className="grid grid-cols-7 gap-1 mb-2">
-              {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map((dayName) => (
-                <div key={dayName} className="text-center text-xs font-medium text-muted-foreground py-1">
+            <div className="grid grid-cols-7 gap-0.5 mb-1">
+              {['D', 'S', 'T', 'Q', 'Q', 'S', 'S'].map((dayName, idx) => (
+                <div key={idx} className="text-center text-[10px] font-medium text-muted-foreground">
                   {dayName}
                 </div>
               ))}
             </div>
             
             {/* Calendar days */}
-            <div className="grid grid-cols-7 gap-1">
+            <div className="grid grid-cols-7 gap-0.5">
               {calendarDays.map((day) => {
                 const isSelected = isSameDay(day, selectedDate);
                 const isToday = isSameDay(day, new Date());
@@ -112,14 +112,14 @@ export default function Agenda() {
                     key={day.toISOString()}
                     onClick={() => setSelectedDate(day)}
                     className={cn(
-                      "aspect-square flex items-center justify-center rounded-lg text-sm font-medium transition-colors touch-manipulation",
+                      "h-7 w-7 flex items-center justify-center rounded text-xs font-medium transition-colors touch-manipulation",
                       isSelected 
                         ? "bg-primary text-primary-foreground" 
                         : isToday 
                           ? "bg-accent text-accent-foreground"
                           : isCurrentMonth
-                            ? "bg-secondary/50 text-foreground hover:bg-secondary"
-                            : "text-muted-foreground/50 hover:bg-secondary/30"
+                            ? "text-foreground hover:bg-secondary"
+                            : "text-muted-foreground/40"
                     )}
                   >
                     {format(day, 'd')}
