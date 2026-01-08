@@ -6,13 +6,13 @@ import { Calendar, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 export default function Onboarding() {
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    const createSalonAndRedirect = async () => {
+    const setupAccount = async () => {
       if (!user) return;
       
       try {
@@ -27,22 +27,16 @@ export default function Onboarding() {
           throw new Error('Plano gratuito não encontrado');
         }
 
-        // Create salon with user's name
-        const salonName = user.user_metadata?.full_name 
-          ? `Salão ${user.user_metadata.full_name}` 
-          : 'Meu Salão';
-
+        // Create salon with default name
         const { data: salon, error: salonError } = await supabase
           .from('salons')
-          .insert({
-            name: salonName,
-          })
+          .insert({ name: 'Meu Salão' })
           .select()
           .single();
         
         if (salonError) throw salonError;
 
-        // IMPORTANT: Update profile with salon_id FIRST so RLS policies work
+        // Update profile with salon_id FIRST
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ salon_id: salon.id })
@@ -50,33 +44,27 @@ export default function Onboarding() {
         
         if (profileError) throw profileError;
 
-        // Add admin role BEFORE creating salon_plan (needed for RLS)
+        // Add admin role
         const { error: roleError } = await supabase
           .from('user_roles')
-          .insert({
-            user_id: user.id,
-            role: 'admin',
-          });
+          .insert({ user_id: user.id, role: 'admin' });
         
         if (roleError) throw roleError;
 
-        // Now create salon plan (user has salon_id and admin role)
+        // Create salon plan
         const { error: planError } = await supabase
           .from('salon_plan')
-          .insert({
-            salon_id: salon.id,
-            plan_id: freePlan.id,
-          });
+          .insert({ salon_id: salon.id, plan_id: freePlan.id });
         
         if (planError) throw planError;
 
-        // Create the user as a professional too
+        // Create user as professional
         const { error: profError } = await supabase
           .from('professionals')
           .insert({
             salon_id: salon.id,
             profile_id: user.id,
-            display_name: user.user_metadata?.full_name || user.email || 'Admin',
+            display_name: user.user_metadata?.full_name || user.email?.split('@')[0] || 'Admin',
             commission_percent_default: 0,
           });
         
@@ -84,14 +72,14 @@ export default function Onboarding() {
 
         await refreshProfile();
         navigate('/dashboard');
-      } catch (error: any) {
-        console.error('Onboarding error:', error);
-        toast({ variant: 'destructive', title: 'Erro ao configurar conta', description: error.message });
-        setLoading(false);
+      } catch (err: any) {
+        console.error('Setup error:', err);
+        setError(err.message);
+        toast({ variant: 'destructive', title: 'Erro', description: err.message });
       }
     };
 
-    createSalonAndRedirect();
+    setupAccount();
   }, [user, navigate, refreshProfile, toast]);
 
   return (
@@ -100,8 +88,17 @@ export default function Onboarding() {
         <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center">
           <Calendar className="h-8 w-8 text-primary-foreground" />
         </div>
-        <h1 className="text-xl font-semibold text-foreground">Configurando sua conta...</h1>
-        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        {error ? (
+          <>
+            <h1 className="text-xl font-semibold text-destructive">Erro ao configurar</h1>
+            <p className="text-sm text-muted-foreground">{error}</p>
+          </>
+        ) : (
+          <>
+            <h1 className="text-xl font-semibold text-foreground">Preparando...</h1>
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+          </>
+        )}
       </div>
     </div>
   );
