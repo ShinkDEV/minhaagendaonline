@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Users, LogOut, Save, Plus, UserCog, Percent, Scissors, Mail, Trash2 } from 'lucide-react';
+import { Building2, Users, LogOut, Save, Plus, UserCog, Percent, Scissors, Mail, Trash2, Gem, Crown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfessionals, useCreateProfessional, useUpdateProfessional, useDeleteProfessional } from '@/hooks/useProfessionals';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -22,7 +22,7 @@ import { ProfessionalCommissions } from '@/components/ProfessionalCommissions';
 import { InviteProfessional } from '@/components/InviteProfessional';
 
 export default function Settings() {
-  const { salon, profile, salonPlan, isAdmin, signOut, refreshProfile } = useAuth();
+  const { salon, profile, salonPlan, isAdmin, isSuperAdmin, signOut, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -273,6 +273,30 @@ export default function Settings() {
                   <LogOut className="h-4 w-4 mr-2" />
                   Sair da conta
                 </Button>
+
+                {/* Mobile-only: Upgrade and Super Admin buttons */}
+                <div className="md:hidden space-y-2 pt-4 border-t border-border">
+                  {(isAdmin || isSuperAdmin) && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-600 border-amber-500/30 hover:from-amber-500/20 hover:to-orange-500/20"
+                      onClick={() => navigate('/upgrade')}
+                    >
+                      <Gem className="h-4 w-4 mr-2" />
+                      Upgrade
+                    </Button>
+                  )}
+                  {isSuperAdmin && (
+                    <Button 
+                      variant="outline" 
+                      className="w-full"
+                      onClick={() => navigate('/super-admin')}
+                    >
+                      <Crown className="h-4 w-4 mr-2" />
+                      Super Admin
+                    </Button>
+                  )}
+                </div>
               </CardContent>
             </Card>
           </TabsContent>
