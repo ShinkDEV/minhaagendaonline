@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TimeBlockManager } from '@/components/TimeBlockManager';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
@@ -150,7 +151,7 @@ export default function Settings() {
     <AppLayout title="Configurações">
       <div className="space-y-4">
         <Tabs defaultValue="salon">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="salon">
               <Building2 className="h-4 w-4 mr-2" />
               Salão
@@ -158,6 +159,9 @@ export default function Settings() {
             <TabsTrigger value="team">
               <Users className="h-4 w-4 mr-2" />
               Equipe
+            </TabsTrigger>
+            <TabsTrigger value="blocks">
+              Bloqueios
             </TabsTrigger>
           </TabsList>
 
@@ -389,6 +393,11 @@ export default function Settings() {
                 <Plus className="h-6 w-6" />
               </Button>
             )}
+          </TabsContent>
+
+          {/* Blocks Tab */}
+          <TabsContent value="blocks" className="space-y-4 mt-4">
+            <TimeBlockManager />
           </TabsContent>
         </Tabs>
       </div>

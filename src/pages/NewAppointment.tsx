@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -20,6 +20,7 @@ import { useProfessionals } from '@/hooks/useProfessionals';
 import { useClients, useCreateClient } from '@/hooks/useClients';
 import { useActiveServices } from '@/hooks/useServices';
 import { useCreateAppointment } from '@/hooks/useAppointments';
+import { useTimeBlocks, isTimeSlotBlocked } from '@/hooks/useTimeBlocks';
 import { Service } from '@/types/database';
 
 export default function NewAppointment() {
@@ -40,6 +41,7 @@ export default function NewAppointment() {
   const { data: professionals = [] } = useProfessionals();
   const { data: clients = [] } = useClients();
   const { data: services = [] } = useActiveServices();
+  const { data: timeBlocks = [] } = useTimeBlocks();
   const createAppointment = useCreateAppointment();
   const createClient = useCreateClient();
 
@@ -49,7 +51,7 @@ export default function NewAppointment() {
   const discountValue = Math.min(Math.max(parseFloat(discount) || 0, 0), subtotal);
   const totalAmount = subtotal - discountValue;
 
-  const timeSlots = Array.from({ length: 24 }, (_, i) => {
+  const allTimeSlots = Array.from({ length: 24 }, (_, i) => {
     const hour = Math.floor(i / 2) + 8;
     const min = (i % 2) * 30;
     return `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
@@ -57,6 +59,21 @@ export default function NewAppointment() {
     const hour = parseInt(t.split(':')[0]);
     return hour >= 8 && hour < 20;
   });
+
+  // Filter out blocked time slots
+  const availableTimeSlots = professionalId 
+    ? allTimeSlots.filter(slot => !isTimeSlotBlocked(timeBlocks, professionalId, date, slot))
+    : allTimeSlots;
+
+  // Reset time when professional or date changes if current time is blocked
+  useEffect(() => {
+    if (professionalId && time && isTimeSlotBlocked(timeBlocks, professionalId, date, time)) {
+      const firstAvailable = availableTimeSlots[0];
+      if (firstAvailable) {
+        setTime(firstAvailable);
+      }
+    }
+  }, [professionalId, date, timeBlocks]);
 
   const handleServiceToggle = (serviceId: string) => {
     setSelectedServices(prev =>
@@ -232,11 +249,17 @@ export default function NewAppointment() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {timeSlots.map((slot) => (
-                      <SelectItem key={slot} value={slot}>
-                        {slot}
-                      </SelectItem>
-                    ))}
+                    {availableTimeSlots.length === 0 ? (
+                      <div className="py-2 px-3 text-sm text-muted-foreground">
+                        Nenhum horário disponível
+                      </div>
+                    ) : (
+                      availableTimeSlots.map((slot) => (
+                        <SelectItem key={slot} value={slot}>
+                          {slot}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
