@@ -10,6 +10,7 @@ import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { AnnouncementBanner } from '@/components/announcements/AnnouncementBanner';
 
 export default function Dashboard() {
   const { profile, salon, salonPlan, isAdmin, isSuperAdmin, user } = useAuth();
@@ -111,6 +112,9 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* Announcements */}
+        <AnnouncementBanner />
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
