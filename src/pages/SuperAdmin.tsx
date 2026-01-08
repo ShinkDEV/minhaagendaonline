@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Building2, 
   Users, 
@@ -18,12 +19,29 @@ import {
   Calendar,
   LogOut,
   RefreshCw,
-  ArrowLeft
+  ArrowLeft,
+  DollarSign,
+  TrendingUp,
+  PieChart
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
+// Preços estimados por plano (em R$)
+const PLAN_PRICES: Record<string, number> = {
+  'starter': 49.90,
+  'pro': 99.90,
+  'premium': 199.90,
+};
+
+interface SubscriptionHistory {
+  salon_id: string;
+  salon_name: string;
+  plan_name: string;
+  plan_code: string;
+  started_at: string;
+}
 interface SalonWithDetails {
   id: string;
   name: string;
@@ -45,6 +63,8 @@ export default function SuperAdmin() {
   const [selectedSalon, setSelectedSalon] = useState<SalonWithDetails | null>(null);
   const [showDetails, setShowDetails] = useState(false);
 
+  const [activeTab, setActiveTab] = useState('salons');
+
   // Fetch all plans
   const { data: plans = [] } = useQuery({
     queryKey: ['all-plans'],
@@ -59,6 +79,41 @@ export default function SuperAdmin() {
     enabled: isSuperAdmin,
   });
 
+  // Fetch subscription history
+  const { data: subscriptionHistory = [] } = useQuery({
+    queryKey: ['subscription-history'],
+    queryFn: async () => {
+      const { data: salonPlans, error: spError } = await supabase
+        .from('salon_plan')
+        .select('salon_id, plan_id, started_at')
+        .order('started_at', { ascending: false });
+      
+      if (spError) throw spError;
+
+      const { data: salonsData } = await supabase
+        .from('salons')
+        .select('id, name');
+
+      const { data: plansData } = await supabase
+        .from('plans')
+        .select('id, name, code');
+
+      const history: SubscriptionHistory[] = (salonPlans || []).map(sp => {
+        const salon = salonsData?.find(s => s.id === sp.salon_id);
+        const plan = plansData?.find(p => p.id === sp.plan_id);
+        return {
+          salon_id: sp.salon_id,
+          salon_name: salon?.name || 'Desconhecido',
+          plan_name: plan?.name || 'Sem plano',
+          plan_code: plan?.code || '',
+          started_at: sp.started_at,
+        };
+      });
+
+      return history;
+    },
+    enabled: isSuperAdmin,
+  });
   // Fetch all salons with details
   const { data: salons = [], isLoading, refetch } = useQuery({
     queryKey: ['super-admin-salons'],
@@ -165,6 +220,22 @@ export default function SuperAdmin() {
     }
   };
 
+  // Calculate revenue by plan
+  const revenueByPlan = plans.map(plan => {
+    const count = salons.filter(s => s.plan_code === plan.code).length;
+    const price = PLAN_PRICES[plan.code] || 0;
+    return {
+      plan_name: plan.name,
+      plan_code: plan.code,
+      count,
+      monthly_revenue: count * price,
+      price,
+    };
+  });
+
+  const totalMonthlyRevenue = revenueByPlan.reduce((acc, p) => acc + p.monthly_revenue, 0);
+  const totalWithPlan = salons.filter(s => s.plan_code).length;
+
   // Redirect if not super admin
   if (!isSuperAdmin) {
     return <Navigate to="/dashboard" replace />;
@@ -213,84 +284,191 @@ export default function SuperAdmin() {
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Users className="h-5 w-5 text-primary" />
+                  <DollarSign className="h-5 w-5 text-primary" />
                 </div>
                 <div>
                   <p className="text-2xl font-bold">
-                    {salons.reduce((acc, s) => acc + s.professionals_count, 0)}
+                    R$ {totalMonthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
-                  <p className="text-xs text-muted-foreground">Profissionais</p>
+                  <p className="text-xs text-muted-foreground">Receita/mês</p>
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Search */}
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Buscar salão..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-          <Button variant="outline" size="icon" onClick={() => refetch()}>
-            <RefreshCw className="h-4 w-4" />
-          </Button>
-        </div>
+        {/* Tabs */}
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="salons" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Salões
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              Financeiro
+            </TabsTrigger>
+          </TabsList>
 
-        {/* Salons list */}
-        <Card className="border-0 shadow-sm">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-base">Salões Cadastrados</CardTitle>
-          </CardHeader>
-          <CardContent className="p-0">
-            {isLoading ? (
-              <div className="p-8 text-center text-muted-foreground">
-                Carregando...
+          {/* Salons Tab */}
+          <TabsContent value="salons" className="space-y-4 mt-4">
+            {/* Search */}
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar salão..."
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-10"
+                />
               </div>
-            ) : filteredSalons.length === 0 ? (
-              <div className="p-8 text-center text-muted-foreground">
-                Nenhum salão encontrado
-              </div>
-            ) : (
-              <div className="divide-y divide-border">
-                {filteredSalons.map((salon) => (
-                  <button
-                    key={salon.id}
-                    onClick={() => openSalonDetails(salon)}
-                    className="w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left"
-                  >
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-primary/10 text-primary font-semibold">
-                        {getInitials(salon.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1 min-w-0">
+              <Button variant="outline" size="icon" onClick={() => refetch()}>
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {/* Salons list */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Salões Cadastrados</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {isLoading ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    Carregando...
+                  </div>
+                ) : filteredSalons.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    Nenhum salão encontrado
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {filteredSalons.map((salon) => (
+                      <button
+                        key={salon.id}
+                        onClick={() => openSalonDetails(salon)}
+                        className="w-full p-4 flex items-center gap-3 hover:bg-muted/50 transition-colors text-left"
+                      >
+                        <Avatar className="h-12 w-12">
+                          <AvatarFallback className="bg-primary/10 text-primary font-semibold">
+                            {getInitials(salon.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold truncate">{salon.name}</span>
+                            <Badge variant={getPlanBadgeVariant(salon.plan_code)}>
+                              {salon.plan_name}
+                            </Badge>
+                          </div>
+                          <div className="text-sm text-muted-foreground flex items-center gap-2">
+                            <Users className="h-3 w-3" />
+                            {salon.professionals_count} profissionais
+                          </div>
+                          <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
+                            <Calendar className="h-3 w-3" />
+                            {format(new Date(salon.created_at), "dd MMM yyyy", { locale: ptBR })}
+                          </div>
+                        </div>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Financial Tab */}
+          <TabsContent value="financial" className="space-y-4 mt-4">
+            {/* Revenue by Plan */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <PieChart className="h-4 w-4" />
+                  Receita por Plano
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {revenueByPlan.map((item) => (
+                  <div key={item.plan_code} className="p-3 bg-muted rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold truncate">{salon.name}</span>
-                        <Badge variant={getPlanBadgeVariant(salon.plan_code)}>
-                          {salon.plan_name}
+                        <Badge variant={getPlanBadgeVariant(item.plan_code)}>
+                          {item.plan_name}
+                        </Badge>
+                        <span className="text-sm text-muted-foreground">
+                          {item.count} salões
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium">
+                        R$ {item.price.toFixed(2)}/mês
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="h-2 flex-1 bg-background rounded-full overflow-hidden mr-3">
+                        <div 
+                          className="h-full bg-primary rounded-full transition-all"
+                          style={{ 
+                            width: `${totalWithPlan > 0 ? (item.count / totalWithPlan) * 100 : 0}%` 
+                          }}
+                        />
+                      </div>
+                      <span className="font-semibold text-primary">
+                        R$ {item.monthly_revenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                
+                <div className="p-4 bg-primary/10 rounded-lg mt-4">
+                  <div className="flex items-center justify-between">
+                    <span className="font-medium">Total Mensal Estimado</span>
+                    <span className="text-xl font-bold text-primary">
+                      R$ {totalMonthlyRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {totalWithPlan} salões com plano ativo
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Subscription History */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Histórico de Assinaturas
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {subscriptionHistory.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    Nenhuma assinatura registrada
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border max-h-[400px] overflow-y-auto">
+                    {subscriptionHistory.map((item, idx) => (
+                      <div key={`${item.salon_id}-${idx}`} className="p-4 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{item.salon_name}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {format(new Date(item.started_at), "dd MMM yyyy 'às' HH:mm", { locale: ptBR })}
+                          </p>
+                        </div>
+                        <Badge variant={getPlanBadgeVariant(item.plan_code)}>
+                          {item.plan_name}
                         </Badge>
                       </div>
-                      <div className="text-sm text-muted-foreground flex items-center gap-2">
-                        <Users className="h-3 w-3" />
-                        {salon.professionals_count} profissionais
-                      </div>
-                      <div className="text-xs text-muted-foreground flex items-center gap-1 mt-1">
-                        <Calendar className="h-3 w-3" />
-                        {format(new Date(salon.created_at), "dd MMM yyyy", { locale: ptBR })}
-                      </div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            )}
-          </CardContent>
-        </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
       </main>
 
       {/* Salon Details Sheet */}
