@@ -1,4 +1,4 @@
-import { Calendar, Users, Scissors, LayoutDashboard, Settings, DollarSign, ChevronLeft, ChevronRight, Crown, Percent, Gem } from 'lucide-react';
+import { Calendar, Users, Scissors, LayoutDashboard, Settings, DollarSign, ChevronLeft, Crown, Percent, Gem } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -37,24 +37,30 @@ export function Sidebar() {
   return (
     <aside 
       className={cn(
-        "hidden md:flex flex-col h-screen bg-card border-r border-border transition-all duration-300 sticky top-0",
+        "hidden md:flex flex-col h-screen bg-card border-r border-border sticky top-0 transition-[width] duration-300 ease-in-out",
         collapsed ? "w-16" : "w-56"
       )}
     >
       <div className={cn(
-        "h-16 flex items-center border-b border-border px-3",
+        "h-16 flex items-center border-b border-border px-3 transition-all duration-300",
         collapsed ? "justify-center" : "justify-between"
       )}>
-        {!collapsed && (
+        <div className={cn(
+          "overflow-hidden transition-all duration-300",
+          collapsed ? "w-0 opacity-0" : "w-auto opacity-100"
+        )}>
           <img src={logo} alt="Minha Agenda Online" className="h-10 object-contain" />
-        )}
+        </div>
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8 shrink-0"
+          className="h-8 w-8 shrink-0 transition-transform duration-300 hover:scale-110"
           onClick={() => setCollapsed(!collapsed)}
         >
-          {collapsed ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+          <ChevronLeft className={cn(
+            "h-4 w-4 transition-transform duration-300",
+            collapsed && "rotate-180"
+          )} />
         </Button>
       </div>
 
@@ -67,7 +73,7 @@ export function Sidebar() {
                 <button
                   onClick={() => navigate(item.path)}
                   className={cn(
-                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
+                    "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
                     isActive 
                       ? "bg-primary text-primary-foreground" 
                       : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -76,7 +82,12 @@ export function Sidebar() {
                   title={collapsed ? item.label : undefined}
                 >
                   <item.icon className="h-5 w-5 shrink-0" />
-                  {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
+                  <span className={cn(
+                    "text-sm font-medium whitespace-nowrap transition-all duration-300",
+                    collapsed ? "w-0 opacity-0 overflow-hidden" : "w-auto opacity-100"
+                  )}>
+                    {item.label}
+                  </span>
                 </button>
               </li>
             );
@@ -89,7 +100,7 @@ export function Sidebar() {
             <button
               onClick={() => navigate('/upgrade')}
               className={cn(
-                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all",
+                "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
                 location.pathname === '/upgrade'
                   ? "bg-gradient-to-r from-amber-500 to-orange-500 text-white shadow-md"
                   : "bg-gradient-to-r from-amber-500/10 to-orange-500/10 text-amber-600 hover:from-amber-500/20 hover:to-orange-500/20 border border-amber-500/30",
@@ -98,9 +109,12 @@ export function Sidebar() {
               title={collapsed ? 'Upgrade' : undefined}
             >
               <Gem className="h-5 w-5 shrink-0" />
-              {!collapsed && (
-                <span className="text-sm font-semibold">Upgrade</span>
-              )}
+              <span className={cn(
+                "text-sm font-semibold whitespace-nowrap transition-all duration-300",
+                collapsed ? "w-0 opacity-0 overflow-hidden" : "w-auto opacity-100"
+              )}>
+                Upgrade
+              </span>
             </button>
           </div>
         )}
@@ -116,7 +130,7 @@ export function Sidebar() {
                     <button
                       onClick={() => navigate(item.path)}
                       className={cn(
-                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
                         isActive 
                           ? "bg-primary text-primary-foreground" 
                           : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -125,7 +139,12 @@ export function Sidebar() {
                       title={collapsed ? item.label : undefined}
                     >
                       <item.icon className="h-5 w-5 shrink-0" />
-                      {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
+                      <span className={cn(
+                        "text-sm font-medium whitespace-nowrap transition-all duration-300",
+                        collapsed ? "w-0 opacity-0 overflow-hidden" : "w-auto opacity-100"
+                      )}>
+                        {item.label}
+                      </span>
                     </button>
                   </li>
                 );
