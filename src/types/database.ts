@@ -1,4 +1,4 @@
-export type AppRole = 'admin' | 'professional';
+export type AppRole = 'admin' | 'professional' | 'super_admin';
 export type AppointmentStatus = 'confirmed' | 'completed' | 'cancelled';
 export type PaymentMethod = 'cash' | 'pix' | 'credit_card' | 'debit_card' | 'other';
 export type CommissionType = 'percent' | 'fixed';
