@@ -132,7 +132,7 @@ export default function Dashboard() {
 
   return (
     <AppLayout>
-      <div className="space-y-4 md:space-y-6 overflow-x-hidden">
+      <div className="space-y-4 md:space-y-6 overflow-x-hidden w-full max-w-full">
         {/* Trial Cancelled Warning */}
         {cancelledTrial && (
           <Alert variant="destructive">
@@ -165,15 +165,15 @@ export default function Dashboard() {
         {/* Plan info - only for admins */}
         {isAdmin && salonPlan && (
           <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-3 md:p-4 flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-primary shrink-0" />
+            <CardContent className="p-2.5 md:p-4 flex items-center gap-2 md:gap-3">
+              <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">Plano: {salonPlan.plan.name}</p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs md:text-sm font-medium truncate">Plano: {salonPlan.plan.name}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">
                   Até {salonPlan.plan.max_professionals} profissionais
                 </p>
               </div>
-              <Button variant="outline" size="sm" className="shrink-0" onClick={() => navigate('/plans')}>
+              <Button variant="outline" size="sm" className="shrink-0 text-xs px-2 md:px-3" onClick={() => navigate('/plans')}>
                 Ver planos
               </Button>
             </CardContent>
@@ -181,15 +181,15 @@ export default function Dashboard() {
         )}
 
         {/* Stats Grid */}
-        <div className={`grid gap-2 md:gap-3 ${isAdmin ? 'grid-cols-2' : 'grid-cols-3'}`}>
+        <div className={`grid gap-2 md:gap-3 ${isAdmin ? 'grid-cols-2 sm:grid-cols-4' : 'grid-cols-3'}`}>
           {stats.map((stat) => (
-            <Card key={stat.label} className="border-0 shadow-sm">
-              <CardContent className="p-3 md:p-4">
-                <div className={`h-8 w-8 md:h-10 md:w-10 rounded-lg md:rounded-xl ${stat.color} flex items-center justify-center mb-2 md:mb-3`}>
-                  <stat.icon className="h-4 w-4 md:h-5 md:w-5" />
+            <Card key={stat.label} className="border-0 shadow-sm min-w-0">
+              <CardContent className="p-2.5 md:p-4">
+                <div className={`h-7 w-7 md:h-10 md:w-10 rounded-lg md:rounded-xl ${stat.color} flex items-center justify-center mb-1.5 md:mb-3`}>
+                  <stat.icon className="h-3.5 w-3.5 md:h-5 md:w-5" />
                 </div>
-                <div className="text-lg md:text-2xl font-bold text-foreground truncate">{stat.value}</div>
-                <div className="text-[10px] md:text-xs text-muted-foreground truncate">{stat.sublabel}</div>
+                <div className="text-base md:text-2xl font-bold text-foreground truncate">{stat.value}</div>
+                <div className="text-[9px] md:text-xs text-muted-foreground truncate">{stat.sublabel}</div>
               </CardContent>
             </Card>
           ))}

@@ -45,7 +45,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
           </header>
         )}
         
-        <main className="flex-1 px-4 md:px-6 py-4">
+        <main className="flex-1 px-3 md:px-6 py-3 md:py-4 overflow-x-hidden">
           {children}
         </main>
         <div className="md:hidden">
