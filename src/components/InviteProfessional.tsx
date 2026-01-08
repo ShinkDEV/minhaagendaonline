@@ -41,7 +41,7 @@ export function InviteProfessional({ open, onClose }: Props) {
 
     try {
       await createInvitation.mutateAsync(email);
-      toast({ title: 'Convite criado!', description: 'Copie o link e envie para o profissional' });
+      toast({ title: 'Convite enviado!', description: 'O profissional receberá um email com o link de convite' });
       setEmail('');
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Erro', description: error.message });
