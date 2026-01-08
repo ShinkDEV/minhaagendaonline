@@ -27,7 +27,10 @@ import {
   Gift,
   Plus,
   Trash2,
-  Loader2
+  Loader2,
+  Link,
+  Copy,
+  Check
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnnouncementManager } from '@/components/announcements/AnnouncementManager';
@@ -71,6 +74,9 @@ export default function SuperAdmin() {
   const [newTrialEmail, setNewTrialEmail] = useState('');
   const [newTrialNotes, setNewTrialNotes] = useState('');
   const [isAddingTrial, setIsAddingTrial] = useState(false);
+  const [newLinkNotes, setNewLinkNotes] = useState('');
+  const [isCreatingLink, setIsCreatingLink] = useState(false);
+  const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
   const [activeTab, setActiveTab] = useState('salons');
 
@@ -130,6 +136,20 @@ export default function SuperAdmin() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('free_trial_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: isSuperAdmin,
+  });
+
+  // Fetch trial invite links
+  const { data: inviteLinks = [], refetch: refetchLinks } = useQuery({
+    queryKey: ['trial-invite-links'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('trial_invite_links')
         .select('*')
         .order('created_at', { ascending: false });
       if (error) throw error;
@@ -274,6 +294,71 @@ export default function SuperAdmin() {
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Erro', description: error.message });
     }
+  };
+
+  const handleCreateInviteLink = async () => {
+    setIsCreatingLink(true);
+    try {
+      // Generate random code
+      const code = Math.random().toString(36).substring(2, 10).toUpperCase();
+      
+      const { error } = await supabase
+        .from('trial_invite_links')
+        .insert({
+          code,
+          notes: newLinkNotes.trim() || null,
+        });
+
+      if (error) throw error;
+
+      toast({ title: 'Link de convite criado!' });
+      setNewLinkNotes('');
+      refetchLinks();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    } finally {
+      setIsCreatingLink(false);
+    }
+  };
+
+  const handleToggleLinkActive = async (id: string, currentActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('trial_invite_links')
+        .update({ active: !currentActive })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({ title: currentActive ? 'Link desativado' : 'Link ativado' });
+      refetchLinks();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    }
+  };
+
+  const handleDeleteLink = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('trial_invite_links')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({ title: 'Link removido' });
+      refetchLinks();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    }
+  };
+
+  const copyLinkToClipboard = (code: string, id: string) => {
+    const url = `${window.location.origin}/trial-register/${code}`;
+    navigator.clipboard.writeText(url);
+    setCopiedLinkId(id);
+    setTimeout(() => setCopiedLinkId(null), 2000);
+    toast({ title: 'Link copiado!' });
   };
 
   const openSalonDetails = (salon: SalonWithDetails) => {
@@ -494,6 +579,89 @@ export default function SuperAdmin() {
                   )}
                   Adicionar Teste Gratuito Ilimitado
                 </Button>
+              </CardContent>
+            </Card>
+
+            {/* Invite Links */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Link className="h-4 w-4" />
+                  Links de Convite
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Input
+                  placeholder="Notas do link (opcional)"
+                  value={newLinkNotes}
+                  onChange={(e) => setNewLinkNotes(e.target.value)}
+                />
+                <Button 
+                  className="w-full" 
+                  onClick={handleCreateInviteLink}
+                  disabled={isCreatingLink}
+                  variant="outline"
+                >
+                  {isCreatingLink ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  Criar Link de Convite
+                </Button>
+
+                {inviteLinks.length > 0 && (
+                  <div className="divide-y divide-border border rounded-lg mt-4">
+                    {inviteLinks.map((link) => (
+                      <div key={link.id} className="p-3 flex items-center justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <code className="text-sm font-mono bg-muted px-2 py-0.5 rounded">
+                              {link.code}
+                            </code>
+                            <Badge variant={link.active ? 'default' : 'secondary'}>
+                              {link.active ? 'Ativo' : 'Inativo'}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                            <Users className="h-3 w-3" />
+                            {link.usage_count} uso(s)
+                            {link.notes && (
+                              <span className="ml-2">• {link.notes}</span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => copyLinkToClipboard(link.code, link.id)}
+                          >
+                            {copiedLinkId === link.id ? (
+                              <Check className="h-4 w-4 text-green-600" />
+                            ) : (
+                              <Copy className="h-4 w-4" />
+                            )}
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleToggleLinkActive(link.id, link.active)}
+                          >
+                            <Link className={`h-4 w-4 ${link.active ? 'text-primary' : 'text-muted-foreground'}`} />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleDeleteLink(link.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
