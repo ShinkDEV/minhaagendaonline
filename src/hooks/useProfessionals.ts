@@ -3,20 +3,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Professional } from '@/types/database';
 
-export function useProfessionals() {
+export function useProfessionals(includeInactive = false) {
   const { salon } = useAuth();
 
   return useQuery({
-    queryKey: ['professionals', salon?.id],
+    queryKey: ['professionals', salon?.id, includeInactive],
     queryFn: async () => {
       if (!salon?.id) return [];
-      const { data, error } = await supabase
+      let query = supabase
         .from('professionals')
         .select('*')
         .eq('salon_id', salon.id)
-        .eq('active', true)
         .order('display_name');
       
+      if (!includeInactive) {
+        query = query.eq('active', true);
+      }
+      
+      const { data, error } = await query;
       if (error) throw error;
       return data as Professional[];
     },
@@ -50,6 +54,23 @@ export function useUpdateProfessional() {
       const { error } = await supabase
         .from('professionals')
         .update(data)
+        .eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['professionals'] });
+    },
+  });
+}
+
+export function useDeleteProfessional() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('professionals')
+        .delete()
         .eq('id', id);
       if (error) throw error;
     },
