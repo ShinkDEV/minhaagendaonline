@@ -1,4 +1,4 @@
-import { Calendar, Users, Scissors, LayoutDashboard, Settings, DollarSign, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Calendar, Users, Scissors, LayoutDashboard, Settings, DollarSign, ChevronLeft, ChevronRight, Crown } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -12,6 +12,10 @@ const adminNavItems = [
   { icon: Users, label: 'Clientes', path: '/clients' },
   { icon: Scissors, label: 'Serviços', path: '/services' },
   { icon: Settings, label: 'Configurações', path: '/settings' },
+];
+
+const superAdminNavItems = [
+  { icon: Crown, label: 'Super Admin', path: '/super-admin' },
 ];
 
 const professionalNavItems = [
@@ -77,6 +81,35 @@ export function Sidebar() {
             );
           })}
         </ul>
+
+        {/* Super Admin Section */}
+        {isSuperAdmin && (
+          <div className="mt-4 pt-4 border-t border-border px-2">
+            <ul className="space-y-1">
+              {superAdminNavItems.map((item) => {
+                const isActive = location.pathname === item.path;
+                return (
+                  <li key={item.path}>
+                    <button
+                      onClick={() => navigate(item.path)}
+                      className={cn(
+                        "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
+                        isActive 
+                          ? "bg-primary text-primary-foreground" 
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                        collapsed && "justify-center px-2"
+                      )}
+                      title={collapsed ? item.label : undefined}
+                    >
+                      <item.icon className="h-5 w-5 shrink-0" />
+                      {!collapsed && <span className="text-sm font-medium">{item.label}</span>}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
       </nav>
     </aside>
   );
