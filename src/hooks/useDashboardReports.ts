@@ -210,3 +210,53 @@ export function useServiceRanking() {
     enabled: !!salon?.id,
   });
 }
+
+export interface MonthlyCancellation {
+  month: string;
+  total: number;
+  cancelled: number;
+  rate: number;
+}
+
+// Cancellation rate for last 6 months
+export function useCancellationRate() {
+  const { salon } = useAuth();
+
+  return useQuery({
+    queryKey: ['cancellation-rate', salon?.id],
+    queryFn: async () => {
+      if (!salon?.id) return [];
+
+      const result: MonthlyCancellation[] = [];
+      
+      for (let i = 5; i >= 0; i--) {
+        const monthDate = subMonths(new Date(), i);
+        const monthStart = startOfMonth(monthDate);
+        const monthEnd = endOfMonth(monthDate);
+
+        const { data, error } = await supabase
+          .from('appointments')
+          .select('status')
+          .eq('salon_id', salon.id)
+          .gte('start_at', monthStart.toISOString())
+          .lte('start_at', monthEnd.toISOString());
+
+        if (error) throw error;
+
+        const total = data?.length || 0;
+        const cancelled = data?.filter(a => a.status === 'cancelled').length || 0;
+        const rate = total > 0 ? (cancelled / total) * 100 : 0;
+
+        result.push({
+          month: format(monthDate, 'MMM', { locale: undefined }).substring(0, 3),
+          total,
+          cancelled,
+          rate: Math.round(rate * 10) / 10,
+        });
+      }
+
+      return result;
+    },
+    enabled: !!salon?.id,
+  });
+}
