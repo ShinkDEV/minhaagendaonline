@@ -6,23 +6,52 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useAppointments } from '@/hooks/useAppointments';
 import { useCommissions } from '@/hooks/useCommissions';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function Dashboard() {
-  const { profile, salon, salonPlan } = useAuth();
+  const { profile, salon, salonPlan, isAdmin, user } = useAuth();
   const navigate = useNavigate();
   const today = new Date();
   
+  // Get professional ID for current user (for filtering)
+  const { data: myProfessional } = useQuery({
+    queryKey: ['my-professional', user?.id, salon?.id],
+    queryFn: async () => {
+      if (!user?.id || !salon?.id) return null;
+      const { data } = await supabase
+        .from('professionals')
+        .select('*')
+        .eq('salon_id', salon.id)
+        .eq('profile_id', user.id)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user?.id && !!salon?.id && !isAdmin,
+  });
+
   const { data: todayAppointments = [] } = useAppointments(today);
   const { data: pendingCommissions = [] } = useCommissions('pending');
 
-  const confirmedToday = todayAppointments.filter(a => a.status === 'confirmed');
-  const completedToday = todayAppointments.filter(a => a.status === 'completed');
-  const revenueToday = completedToday.reduce((sum, a) => sum + Number(a.total_amount), 0);
-  const pendingCommissionTotal = pendingCommissions.reduce((sum, c) => sum + Number(c.amount), 0);
+  // Filter appointments for professional view
+  const filteredAppointments = isAdmin 
+    ? todayAppointments 
+    : todayAppointments.filter(a => a.professional_id === myProfessional?.id);
 
-  const stats = [
+  // Filter commissions for professional view
+  const filteredCommissions = isAdmin 
+    ? pendingCommissions 
+    : pendingCommissions.filter(c => c.professional_id === myProfessional?.id);
+
+  const confirmedToday = filteredAppointments.filter(a => a.status === 'confirmed');
+  const completedToday = filteredAppointments.filter(a => a.status === 'completed');
+  const revenueToday = completedToday.reduce((sum, a) => sum + Number(a.total_amount), 0);
+  const pendingCommissionTotal = filteredCommissions.reduce((sum, c) => sum + Number(c.amount), 0);
+
+  // Different stats for admin vs professional
+  const adminStats = [
     { 
       label: 'Hoje', 
       value: confirmedToday.length.toString(), 
@@ -53,6 +82,32 @@ export default function Dashboard() {
     },
   ];
 
+  const professionalStats = [
+    { 
+      label: 'Meus Atendimentos', 
+      value: confirmedToday.length.toString(), 
+      sublabel: 'hoje', 
+      icon: Calendar, 
+      color: 'bg-primary/10 text-primary' 
+    },
+    { 
+      label: 'Minhas Comissões', 
+      value: `R$ ${pendingCommissionTotal.toFixed(0)}`, 
+      sublabel: 'a receber', 
+      icon: TrendingUp, 
+      color: 'bg-orange-500/10 text-orange-600' 
+    },
+    { 
+      label: 'Concluídos', 
+      value: completedToday.length.toString(), 
+      sublabel: 'hoje', 
+      icon: Clock, 
+      color: 'bg-green-500/10 text-green-600' 
+    },
+  ];
+
+  const stats = isAdmin ? adminStats : professionalStats;
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -64,8 +119,8 @@ export default function Dashboard() {
           <p className="text-muted-foreground text-sm">{salon?.name}</p>
         </div>
 
-        {/* Plan info */}
-        {salonPlan && (
+        {/* Plan info - only for admins */}
+        {isAdmin && salonPlan && (
           <Card className="border-primary/20 bg-primary/5">
             <CardContent className="p-4 flex items-center gap-3">
               <AlertCircle className="h-5 w-5 text-primary" />
@@ -83,7 +138,7 @@ export default function Dashboard() {
         )}
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className={`grid gap-3 ${isAdmin ? 'grid-cols-2' : 'grid-cols-3'}`}>
           {stats.map((stat) => (
             <Card key={stat.label} className="border-0 shadow-sm">
               <CardContent className="p-4">
@@ -97,23 +152,27 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Quick Actions */}
-        <div className="flex gap-3">
-          <Button className="flex-1 h-12" onClick={() => navigate('/appointments/new')}>
-            <Plus className="h-4 w-4 mr-2" />
-            Novo Agendamento
-          </Button>
-          <Button variant="outline" className="flex-1 h-12" onClick={() => navigate('/clients')}>
-            <Users className="h-4 w-4 mr-2" />
-            Novo Cliente
-          </Button>
-        </div>
+        {/* Quick Actions - only for admins */}
+        {isAdmin && (
+          <div className="flex gap-3">
+            <Button className="flex-1 h-12" onClick={() => navigate('/appointments/new')}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Agendamento
+            </Button>
+            <Button variant="outline" className="flex-1 h-12" onClick={() => navigate('/clients')}>
+              <Users className="h-4 w-4 mr-2" />
+              Novo Cliente
+            </Button>
+          </div>
+        )}
 
         {/* Today's Appointments */}
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="font-semibold">Próximos Atendimentos</h2>
+              <h2 className="font-semibold">
+                {isAdmin ? 'Próximos Atendimentos' : 'Meus Atendimentos de Hoje'}
+              </h2>
               <Button variant="ghost" size="sm" onClick={() => navigate('/agenda')}>
                 Ver agenda
               </Button>
@@ -144,9 +203,11 @@ export default function Dashboard() {
                         {apt.appointment_services?.map(s => s.service?.name).join(', ')}
                       </div>
                     </div>
-                    <div className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
-                      {apt.professional?.display_name}
-                    </div>
+                    {isAdmin && (
+                      <div className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded-full">
+                        {apt.professional?.display_name}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>

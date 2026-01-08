@@ -15,12 +15,23 @@ import Financeiro from "./pages/Financeiro";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import SuperAdmin from "./pages/SuperAdmin";
+import MyCommissions from "./pages/MyCommissions";
+import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
+// Component to protect admin-only routes
+function AdminRoute({ children }: { children: React.ReactNode }) {
+  const { isAdmin } = useAuth();
+  if (!isAdmin) {
+    return <Navigate to="/dashboard" replace />;
+  }
+  return <>{children}</>;
+}
+
 function AppRoutes() {
-  const { user, loading, isSuperAdmin } = useAuth();
+  const { user, loading, isSuperAdmin, isAdmin } = useAuth();
 
   if (loading) {
     return (
@@ -49,21 +60,29 @@ function AppRoutes() {
     );
   }
 
+  // Routes for salon users (admins and professionals)
   return (
     <Routes>
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/agenda" element={<Agenda />} />
-      <Route path="/appointments/new" element={<NewAppointment />} />
       <Route path="/appointments/:id" element={<AppointmentDetail />} />
-      <Route path="/clients" element={<Clientes />} />
+      
+      {/* Professional routes */}
+      <Route path="/my-commissions" element={<MyCommissions />} />
+      <Route path="/profile" element={<Profile />} />
+      
+      {/* Admin-only routes */}
+      <Route path="/appointments/new" element={<AdminRoute><NewAppointment /></AdminRoute>} />
+      <Route path="/clients" element={<AdminRoute><Clientes /></AdminRoute>} />
       <Route path="/clientes" element={<Navigate to="/clients" replace />} />
-      <Route path="/services" element={<Servicos />} />
+      <Route path="/services" element={<AdminRoute><Servicos /></AdminRoute>} />
       <Route path="/servicos" element={<Navigate to="/services" replace />} />
-      <Route path="/financial" element={<Financeiro />} />
-      <Route path="/reports" element={<Reports />} />
-      <Route path="/settings" element={<Settings />} />
+      <Route path="/financial" element={<AdminRoute><Financeiro /></AdminRoute>} />
+      <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
+      <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
+      
       <Route path="*" element={<NotFound />} />
     </Routes>
   );
