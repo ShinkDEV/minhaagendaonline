@@ -13,6 +13,7 @@ import AppointmentDetail from "./pages/AppointmentDetail";
 import Clientes from "./pages/Clientes";
 import Servicos from "./pages/Servicos";
 import Financeiro from "./pages/Financeiro";
+import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -61,6 +62,7 @@ function AppRoutes() {
       <Route path="/services" element={<Servicos />} />
       <Route path="/servicos" element={<Navigate to="/services" replace />} />
       <Route path="/financial" element={<Financeiro />} />
+      <Route path="/reports" element={<Reports />} />
       <Route path="/settings" element={<Settings />} />
       <Route path="*" element={<NotFound />} />
     </Routes>
