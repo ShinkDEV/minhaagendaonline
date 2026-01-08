@@ -26,7 +26,7 @@ export default function Agenda() {
   const navigate = useNavigate();
   
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const weekDays = Array.from({ length: 14 }, (_, i) => addDays(weekStart, i));
 
   const { data: professionals = [] } = useProfessionals();
   const { data: appointments = [] } = useAppointments(
