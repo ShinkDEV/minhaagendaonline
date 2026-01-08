@@ -228,7 +228,7 @@ export default function NewAppointment() {
                   {clients
                     .filter(client => 
                       client.full_name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-                      (client.phone && client.phone.includes(clientSearch))
+                      (client.email && client.email.toLowerCase().includes(clientSearch.toLowerCase()))
                     )
                     .map((client) => (
                       <SelectItem key={client.id} value={client.id}>
@@ -237,7 +237,7 @@ export default function NewAppointment() {
                     ))}
                   {clients.filter(c => 
                     c.full_name.toLowerCase().includes(clientSearch.toLowerCase()) ||
-                    (c.phone && c.phone.includes(clientSearch))
+                    (c.email && c.email.toLowerCase().includes(clientSearch.toLowerCase()))
                   ).length === 0 && (
                     <div className="py-2 px-3 text-sm text-muted-foreground text-center">
                       Nenhum cliente encontrado
