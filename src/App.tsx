@@ -18,6 +18,7 @@ import Settings from "./pages/Settings";
 import SuperAdmin from "./pages/SuperAdmin";
 import MyCommissions from "./pages/MyCommissions";
 import CommissionsReport from "./pages/CommissionsReport";
+import AcceptInvite from "./pages/AcceptInvite";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -47,6 +48,7 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/login" element={<Login />} />
+        <Route path="/invite/:token" element={<AcceptInvite />} />
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -69,6 +71,7 @@ function AppRoutes() {
         <Route path="/commissions" element={<CommissionsReport />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/my-commissions" element={<MyCommissions />} />
+        <Route path="/invite/:token" element={<AcceptInvite />} />
         <Route path="/profile" element={<Profile />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Navigate to="/dashboard" replace />} />
@@ -88,6 +91,7 @@ function AppRoutes() {
       
       {/* Professional routes */}
       <Route path="/my-commissions" element={<MyCommissions />} />
+      <Route path="/invite/:token" element={<AcceptInvite />} />
       <Route path="/profile" element={<Profile />} />
       
       {/* Admin-only routes */}
