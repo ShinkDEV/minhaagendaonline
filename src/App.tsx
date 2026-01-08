@@ -20,6 +20,7 @@ import MyCommissions from "./pages/MyCommissions";
 import CommissionsReport from "./pages/CommissionsReport";
 import AcceptInvite from "./pages/AcceptInvite";
 import Profile from "./pages/Profile";
+import Upgrade from "./pages/Upgrade";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -70,6 +71,7 @@ function AppRoutes() {
         <Route path="/reports" element={<Reports />} />
         <Route path="/commissions" element={<CommissionsReport />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/upgrade" element={<Upgrade />} />
         <Route path="/my-commissions" element={<MyCommissions />} />
         <Route path="/invite/:token" element={<AcceptInvite />} />
         <Route path="/profile" element={<Profile />} />
@@ -105,6 +107,7 @@ function AppRoutes() {
       <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
       <Route path="/commissions" element={<AdminRoute><CommissionsReport /></AdminRoute>} />
       <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
+      <Route path="/upgrade" element={<AdminRoute><Upgrade /></AdminRoute>} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>
