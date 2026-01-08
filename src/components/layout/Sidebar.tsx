@@ -4,6 +4,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import logo from '@/assets/logo.png';
 
 const adminNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
@@ -36,11 +37,11 @@ export function Sidebar() {
       )}
     >
       <div className={cn(
-        "h-14 flex items-center border-b border-border px-4",
+        "h-16 flex items-center border-b border-border px-3",
         collapsed ? "justify-center" : "justify-between"
       )}>
         {!collapsed && (
-          <span className="font-semibold text-foreground truncate">Minha Agenda</span>
+          <img src={logo} alt="Minha Agenda Online" className="h-10 object-contain" />
         )}
         <Button
           variant="ghost"
