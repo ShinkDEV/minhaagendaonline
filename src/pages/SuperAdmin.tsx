@@ -22,9 +22,11 @@ import {
   ArrowLeft,
   DollarSign,
   TrendingUp,
-  PieChart
+  PieChart,
+  Megaphone
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AnnouncementManager } from '@/components/announcements/AnnouncementManager';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
@@ -299,7 +301,7 @@ export default function SuperAdmin() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="salons" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
               Salões
@@ -307,6 +309,10 @@ export default function SuperAdmin() {
             <TabsTrigger value="financial" className="flex items-center gap-2">
               <TrendingUp className="h-4 w-4" />
               Financeiro
+            </TabsTrigger>
+            <TabsTrigger value="announcements" className="flex items-center gap-2">
+              <Megaphone className="h-4 w-4" />
+              Anúncios
             </TabsTrigger>
           </TabsList>
 
@@ -467,6 +473,11 @@ export default function SuperAdmin() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          {/* Announcements Tab */}
+          <TabsContent value="announcements" className="mt-4">
+            <AnnouncementManager />
           </TabsContent>
         </Tabs>
       </main>
