@@ -68,7 +68,30 @@ export function useCreateInvitation() {
         .single();
       
       if (error) throw error;
-      return data as Invitation;
+      
+      const invitation = data as Invitation;
+      const inviteLink = `${window.location.origin}/invite/${invitation.token}`;
+
+      // Send email via edge function
+      try {
+        const response = await supabase.functions.invoke('send-invite-email', {
+          body: {
+            invitationId: invitation.id,
+            email: invitation.email,
+            salonName: salon.name,
+            inviteLink,
+          },
+        });
+        
+        if (response.error) {
+          console.error('Failed to send invite email:', response.error);
+        }
+      } catch (emailError) {
+        console.error('Failed to send invite email:', emailError);
+        // Don't throw - invitation was created, email just failed
+      }
+
+      return invitation;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['invitations'] });
