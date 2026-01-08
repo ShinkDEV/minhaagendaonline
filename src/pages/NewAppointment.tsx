@@ -35,6 +35,7 @@ export default function NewAppointment() {
   const [newClientName, setNewClientName] = useState('');
   const [newClientPhone, setNewClientPhone] = useState('');
   const [showNewClient, setShowNewClient] = useState(false);
+  const [discount, setDiscount] = useState<string>('');
 
   const { data: professionals = [] } = useProfessionals();
   const { data: clients = [] } = useClients();
@@ -44,7 +45,9 @@ export default function NewAppointment() {
 
   const selectedServiceObjects = services.filter(s => selectedServices.includes(s.id));
   const totalDuration = selectedServiceObjects.reduce((sum, s) => sum + s.duration_minutes, 0);
-  const totalAmount = selectedServiceObjects.reduce((sum, s) => sum + Number(s.price), 0);
+  const subtotal = selectedServiceObjects.reduce((sum, s) => sum + Number(s.price), 0);
+  const discountValue = Math.min(Math.max(parseFloat(discount) || 0, 0), subtotal);
+  const totalAmount = subtotal - discountValue;
 
   const timeSlots = Array.from({ length: 24 }, (_, i) => {
     const hour = Math.floor(i / 2) + 8;
@@ -276,15 +279,43 @@ export default function NewAppointment() {
           </CardContent>
         </Card>
 
-        {/* Summary */}
+        {/* Summary & Discount */}
         {selectedServices.length > 0 && (
           <Card className="border-0 shadow-sm bg-primary/5">
-            <CardContent className="p-4">
-              <div className="flex justify-between text-sm mb-1">
+            <CardContent className="p-4 space-y-3">
+              <div className="flex justify-between text-sm">
                 <span>Duração total</span>
                 <span className="font-medium">{totalDuration} min</span>
               </div>
-              <div className="flex justify-between">
+              <div className="flex justify-between text-sm">
+                <span>Subtotal</span>
+                <span className="font-medium">R$ {subtotal.toFixed(2)}</span>
+              </div>
+              
+              {/* Discount Input */}
+              <div className="flex items-center gap-2 pt-2 border-t border-border">
+                <Label htmlFor="discount" className="text-sm whitespace-nowrap">Desconto (R$)</Label>
+                <Input
+                  id="discount"
+                  type="number"
+                  min="0"
+                  max={subtotal}
+                  step="0.01"
+                  value={discount}
+                  onChange={(e) => setDiscount(e.target.value)}
+                  placeholder="0,00"
+                  className="w-28 text-right"
+                />
+              </div>
+              
+              {discountValue > 0 && (
+                <div className="flex justify-between text-sm text-green-600">
+                  <span>Desconto aplicado</span>
+                  <span>- R$ {discountValue.toFixed(2)}</span>
+                </div>
+              )}
+              
+              <div className="flex justify-between pt-2 border-t border-border">
                 <span className="font-semibold">Valor total</span>
                 <span className="font-bold text-primary text-lg">
                   R$ {totalAmount.toFixed(2)}
