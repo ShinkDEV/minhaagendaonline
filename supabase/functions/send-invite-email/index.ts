@@ -31,7 +31,7 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     const emailResponse = await resend.emails.send({
-      from: "Minha Agenda Online <onboarding@resend.dev>",
+      from: "Minha Agenda Online <noreply@t.minhaagendaonline.com>",
       to: [email],
       subject: `Você foi convidado para ${salonName}!`,
       html: `
