@@ -1,12 +1,13 @@
-import { Calendar, Users, Scissors, LayoutDashboard } from 'lucide-react';
+import { Calendar, Users, Scissors, LayoutDashboard, DollarSign } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
+  { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
   { icon: Calendar, label: 'Agenda', path: '/agenda' },
-  { icon: Users, label: 'Clientes', path: '/clientes' },
-  { icon: Scissors, label: 'Serviços', path: '/servicos' },
+  { icon: Users, label: 'Clientes', path: '/clients' },
+  { icon: Scissors, label: 'Serviços', path: '/services' },
+  { icon: DollarSign, label: 'Financeiro', path: '/financial' },
 ];
 
 export function BottomNav() {
@@ -23,14 +24,14 @@ export function BottomNav() {
               key={item.path}
               onClick={() => navigate(item.path)}
               className={cn(
-                "flex flex-col items-center justify-center w-full h-full gap-1 transition-colors touch-manipulation",
+                "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors touch-manipulation",
                 isActive 
                   ? "text-primary" 
                   : "text-muted-foreground hover:text-foreground"
               )}
             >
               <item.icon className="h-5 w-5" />
-              <span className="text-xs font-medium">{item.label}</span>
+              <span className="text-[10px] font-medium">{item.label}</span>
             </button>
           );
         })}

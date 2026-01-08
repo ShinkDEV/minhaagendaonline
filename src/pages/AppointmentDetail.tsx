@@ -1,0 +1,307 @@
+import { useState } from 'react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { AppLayout } from '@/components/layout/AppLayout';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { ArrowLeft, Clock, User, Scissors, DollarSign, Phone, CheckCircle, XCircle } from 'lucide-react';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
+import { useAppointment, useUpdateAppointmentStatus } from '@/hooks/useAppointments';
+import { useCompleteAppointment } from '@/hooks/useCommissions';
+import { PaymentMethod } from '@/types/database';
+
+const statusLabels = {
+  confirmed: { label: 'Confirmado', color: 'bg-primary' },
+  completed: { label: 'Concluído', color: 'bg-green-500' },
+  cancelled: { label: 'Cancelado', color: 'bg-muted' },
+};
+
+const paymentMethods: { value: PaymentMethod; label: string }[] = [
+  { value: 'cash', label: 'Dinheiro' },
+  { value: 'pix', label: 'PIX' },
+  { value: 'credit_card', label: 'Cartão de Crédito' },
+  { value: 'debit_card', label: 'Cartão de Débito' },
+  { value: 'other', label: 'Outro' },
+];
+
+export default function AppointmentDetail() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  
+  const [showCompleteDialog, setShowCompleteDialog] = useState(false);
+  const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
+  const [cancelReason, setCancelReason] = useState('');
+
+  const { data: appointment, isLoading } = useAppointment(id);
+  const updateStatus = useUpdateAppointmentStatus();
+  const completeAppointment = useCompleteAppointment();
+
+  if (isLoading) {
+    return (
+      <AppLayout>
+        <div className="flex items-center justify-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (!appointment) {
+    return (
+      <AppLayout>
+        <div className="text-center py-12">
+          <p className="text-muted-foreground">Agendamento não encontrado</p>
+          <Button className="mt-4" onClick={() => navigate('/agenda')}>
+            Voltar para Agenda
+          </Button>
+        </div>
+      </AppLayout>
+    );
+  }
+
+  const commissionPercent = appointment.professional?.commission_percent_default || 0;
+  const commissionAmount = (Number(appointment.total_amount) * commissionPercent) / 100;
+
+  const handleComplete = async () => {
+    try {
+      await completeAppointment.mutateAsync({
+        appointmentId: appointment.id,
+        paymentMethod,
+        amount: Number(appointment.total_amount),
+        professionalId: appointment.professional_id,
+        commissionAmount,
+      });
+      setShowCompleteDialog(false);
+      toast({ title: 'Atendimento concluído!' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    }
+  };
+
+  const handleCancel = async () => {
+    try {
+      await updateStatus.mutateAsync({
+        id: appointment.id,
+        status: 'cancelled',
+        cancelled_reason: cancelReason,
+      });
+      setShowCancelDialog(false);
+      toast({ title: 'Atendimento cancelado' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    }
+  };
+
+  return (
+    <AppLayout>
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="flex-1">
+            <h1 className="text-xl font-bold">Detalhes do Agendamento</h1>
+          </div>
+          <Badge className={statusLabels[appointment.status].color}>
+            {statusLabels[appointment.status].label}
+          </Badge>
+        </div>
+
+        {/* Date & Time */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-4">
+              <div className="h-14 w-14 rounded-xl bg-primary/10 flex flex-col items-center justify-center">
+                <span className="text-xs text-primary font-medium">
+                  {format(new Date(appointment.start_at), 'MMM', { locale: ptBR }).toUpperCase()}
+                </span>
+                <span className="text-xl font-bold text-primary">
+                  {format(new Date(appointment.start_at), 'd')}
+                </span>
+              </div>
+              <div>
+                <div className="font-semibold text-lg">
+                  {format(new Date(appointment.start_at), "EEEE", { locale: ptBR })}
+                </div>
+                <div className="flex items-center gap-1 text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  {format(new Date(appointment.start_at), 'HH:mm')} - {format(new Date(appointment.end_at), 'HH:mm')}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Client & Professional */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4 space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-secondary flex items-center justify-center">
+                <User className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Cliente</div>
+                <div className="font-medium">
+                  {appointment.client?.full_name || 'Não informado'}
+                </div>
+              </div>
+              {appointment.client?.phone && (
+                <Button variant="ghost" size="icon" className="ml-auto">
+                  <Phone className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                <Scissors className="h-5 w-5 text-primary" />
+              </div>
+              <div>
+                <div className="text-sm text-muted-foreground">Profissional</div>
+                <div className="font-medium">{appointment.professional?.display_name}</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Services */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-4">
+            <h3 className="font-semibold mb-3">Serviços</h3>
+            <div className="space-y-2">
+              {appointment.appointment_services?.map((as) => (
+                <div key={as.id} className="flex justify-between items-center">
+                  <div>
+                    <div className="font-medium">{as.service?.name}</div>
+                    <div className="text-sm text-muted-foreground">
+                      {as.duration_minutes || as.service?.duration_minutes}min
+                    </div>
+                  </div>
+                  <div className="font-semibold">
+                    R$ {Number(as.price_charged).toFixed(2)}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="border-t border-border mt-4 pt-4 flex justify-between">
+              <span className="font-semibold">Total</span>
+              <span className="font-bold text-primary text-lg">
+                R$ {Number(appointment.total_amount).toFixed(2)}
+              </span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Notes */}
+        {appointment.notes && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <h3 className="font-semibold mb-2">Observações</h3>
+              <p className="text-muted-foreground">{appointment.notes}</p>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Actions */}
+        {appointment.status === 'confirmed' && (
+          <div className="flex gap-3">
+            <Button 
+              variant="outline" 
+              className="flex-1"
+              onClick={() => setShowCancelDialog(true)}
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              Cancelar
+            </Button>
+            <Button 
+              className="flex-1"
+              onClick={() => setShowCompleteDialog(true)}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Concluir
+            </Button>
+          </div>
+        )}
+
+        {/* Complete Dialog */}
+        <Dialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Concluir Atendimento</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Forma de Pagamento</Label>
+                <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {paymentMethods.map((pm) => (
+                      <SelectItem key={pm.value} value={pm.value}>
+                        {pm.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <div className="flex justify-between">
+                  <span>Valor do atendimento</span>
+                  <span className="font-semibold">R$ {Number(appointment.total_amount).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-sm text-muted-foreground">
+                  <span>Comissão ({commissionPercent}%)</span>
+                  <span>R$ {commissionAmount.toFixed(2)}</span>
+                </div>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCompleteDialog(false)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleComplete} disabled={completeAppointment.isPending}>
+                {completeAppointment.isPending ? 'Concluindo...' : 'Confirmar'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Cancel Dialog */}
+        <Dialog open={showCancelDialog} onOpenChange={setShowCancelDialog}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Cancelar Atendimento</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>Motivo do cancelamento</Label>
+                <Input
+                  value={cancelReason}
+                  onChange={(e) => setCancelReason(e.target.value)}
+                  placeholder="Ex: Cliente desmarcou"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowCancelDialog(false)}>
+                Voltar
+              </Button>
+              <Button variant="destructive" onClick={handleCancel} disabled={updateStatus.isPending}>
+                {updateStatus.isPending ? 'Cancelando...' : 'Cancelar Atendimento'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </AppLayout>
+  );
+}

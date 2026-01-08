@@ -2,32 +2,48 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addDays, startOfWeek, isSameDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useNavigate } from 'react-router-dom';
+import { useAppointments } from '@/hooks/useAppointments';
+import { useProfessionals } from '@/hooks/useProfessionals';
+import { Appointment } from '@/types/database';
 
 const hours = Array.from({ length: 12 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`);
 
-const mockAppointments = [
-  { id: 1, start: '09:00', end: '10:00', client: 'Maria Silva', service: 'Corte + Escova', color: 'bg-primary' },
-  { id: 2, start: '10:30', end: '11:00', client: 'João Santos', service: 'Corte Masculino', color: 'bg-blue-500' },
-  { id: 3, start: '14:00', end: '16:00', client: 'Fernanda Lima', service: 'Coloração', color: 'bg-orange-500' },
-];
+const statusColors: Record<string, string> = {
+  confirmed: 'bg-primary',
+  completed: 'bg-green-500',
+  cancelled: 'bg-muted text-muted-foreground line-through',
+};
 
 export default function Agenda() {
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [selectedProfessional, setSelectedProfessional] = useState<string>('all');
+  const navigate = useNavigate();
+  
   const weekStart = startOfWeek(selectedDate, { weekStartsOn: 0 });
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
 
-  const getAppointmentPosition = (start: string, end: string) => {
-    const startHour = parseInt(start.split(':')[0]) - 8;
-    const startMin = parseInt(start.split(':')[1]);
-    const endHour = parseInt(end.split(':')[0]) - 8;
-    const endMin = parseInt(end.split(':')[1]);
+  const { data: professionals = [] } = useProfessionals();
+  const { data: appointments = [] } = useAppointments(
+    selectedDate,
+    selectedProfessional !== 'all' ? selectedProfessional : undefined
+  );
+
+  const getAppointmentPosition = (apt: Appointment) => {
+    const start = new Date(apt.start_at);
+    const end = new Date(apt.end_at);
+    const startHour = start.getHours() - 8;
+    const startMin = start.getMinutes();
+    const endHour = end.getHours() - 8;
+    const endMin = end.getMinutes();
     
     const top = (startHour * 60 + startMin) * (64 / 60);
-    const height = ((endHour - startHour) * 60 + (endMin - startMin)) * (64 / 60);
+    const height = Math.max(((endHour - startHour) * 60 + (endMin - startMin)) * (64 / 60), 32);
     
     return { top: `${top}px`, height: `${height}px` };
   };
@@ -47,6 +63,21 @@ export default function Agenda() {
             <ChevronRight className="h-5 w-5" />
           </Button>
         </div>
+
+        {/* Professional filter */}
+        <Select value={selectedProfessional} onValueChange={setSelectedProfessional}>
+          <SelectTrigger>
+            <SelectValue placeholder="Todos os profissionais" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os profissionais</SelectItem>
+            {professionals.map((prof) => (
+              <SelectItem key={prof.id} value={prof.id}>
+                {prof.display_name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {/* Week days selector */}
         <div className="flex gap-1 overflow-x-auto pb-2 -mx-4 px-4">
@@ -79,33 +110,35 @@ export default function Agenda() {
         <Card className="border-0 shadow-sm overflow-hidden">
           <CardContent className="p-0">
             <div className="relative">
-              {/* Hours */}
               {hours.map((hour) => (
                 <div key={hour} className="flex h-16 border-b border-border last:border-b-0">
                   <div className="w-14 flex-shrink-0 text-xs text-muted-foreground p-2 border-r border-border">
                     {hour}
                   </div>
-                  <div className="flex-1 relative">
-                    {/* Appointments for this hour */}
-                  </div>
+                  <div className="flex-1 relative" />
                 </div>
               ))}
               
-              {/* Floating appointments */}
+              {/* Appointments */}
               <div className="absolute top-0 left-14 right-0 bottom-0 pointer-events-none">
-                {mockAppointments.map((apt) => {
-                  const pos = getAppointmentPosition(apt.start, apt.end);
+                {appointments.filter(a => a.status !== 'cancelled').map((apt) => {
+                  const pos = getAppointmentPosition(apt);
                   return (
                     <div
                       key={apt.id}
                       className={cn(
-                        "absolute left-1 right-1 rounded-lg p-2 pointer-events-auto cursor-pointer",
-                        apt.color, "text-white"
+                        "absolute left-1 right-1 rounded-lg p-2 pointer-events-auto cursor-pointer text-white",
+                        statusColors[apt.status]
                       )}
                       style={{ top: pos.top, height: pos.height }}
+                      onClick={() => navigate(`/appointments/${apt.id}`)}
                     >
-                      <div className="text-xs font-medium truncate">{apt.client}</div>
-                      <div className="text-xs opacity-80 truncate">{apt.service}</div>
+                      <div className="text-xs font-medium truncate">
+                        {apt.client?.full_name || 'Cliente'}
+                      </div>
+                      <div className="text-xs opacity-80 truncate">
+                        {apt.professional?.display_name}
+                      </div>
                     </div>
                   );
                 })}
@@ -118,6 +151,7 @@ export default function Agenda() {
         <Button
           size="lg"
           className="fixed bottom-20 right-4 h-14 w-14 rounded-full shadow-lg"
+          onClick={() => navigate('/appointments/new')}
         >
           <Plus className="h-6 w-6" />
         </Button>
