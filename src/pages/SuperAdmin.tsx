@@ -23,7 +23,11 @@ import {
   DollarSign,
   TrendingUp,
   PieChart,
-  Megaphone
+  Megaphone,
+  Gift,
+  Plus,
+  Trash2,
+  Loader2
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnnouncementManager } from '@/components/announcements/AnnouncementManager';
@@ -64,6 +68,9 @@ export default function SuperAdmin() {
   const [search, setSearch] = useState('');
   const [selectedSalon, setSelectedSalon] = useState<SalonWithDetails | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  const [newTrialEmail, setNewTrialEmail] = useState('');
+  const [newTrialNotes, setNewTrialNotes] = useState('');
+  const [isAddingTrial, setIsAddingTrial] = useState(false);
 
   const [activeTab, setActiveTab] = useState('salons');
 
@@ -116,6 +123,21 @@ export default function SuperAdmin() {
     },
     enabled: isSuperAdmin,
   });
+
+  // Fetch free trial users
+  const { data: freeTrialUsers = [], refetch: refetchTrials } = useQuery({
+    queryKey: ['free-trial-users'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('free_trial_users')
+        .select('*')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+    enabled: isSuperAdmin,
+  });
+
   // Fetch all salons with details
   const { data: salons = [], isLoading, refetch } = useQuery({
     queryKey: ['super-admin-salons'],
@@ -200,6 +222,55 @@ export default function SuperAdmin() {
       toast({ title: 'Plano atualizado!' });
       refetch();
       setShowDetails(false);
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    }
+  };
+
+  const handleAddFreeTrial = async () => {
+    if (!newTrialEmail.trim()) {
+      toast({ variant: 'destructive', title: 'Email obrigatório' });
+      return;
+    }
+
+    setIsAddingTrial(true);
+    try {
+      const { error } = await supabase
+        .from('free_trial_users')
+        .insert({
+          email: newTrialEmail.trim().toLowerCase(),
+          notes: newTrialNotes.trim() || null,
+        });
+
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error('Este email já possui teste gratuito');
+        }
+        throw error;
+      }
+
+      toast({ title: 'Teste gratuito adicionado!' });
+      setNewTrialEmail('');
+      setNewTrialNotes('');
+      refetchTrials();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    } finally {
+      setIsAddingTrial(false);
+    }
+  };
+
+  const handleRemoveFreeTrial = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('free_trial_users')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({ title: 'Teste gratuito removido' });
+      refetchTrials();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Erro', description: error.message });
     }
@@ -301,16 +372,20 @@ export default function SuperAdmin() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="salons" className="flex items-center gap-2">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="salons" className="flex items-center gap-1 text-xs">
               <Building2 className="h-4 w-4" />
               Salões
             </TabsTrigger>
-            <TabsTrigger value="financial" className="flex items-center gap-2">
+            <TabsTrigger value="trials" className="flex items-center gap-1 text-xs">
+              <Gift className="h-4 w-4" />
+              Trials
+            </TabsTrigger>
+            <TabsTrigger value="financial" className="flex items-center gap-1 text-xs">
               <TrendingUp className="h-4 w-4" />
               Financeiro
             </TabsTrigger>
-            <TabsTrigger value="announcements" className="flex items-center gap-2">
+            <TabsTrigger value="announcements" className="flex items-center gap-1 text-xs">
               <Megaphone className="h-4 w-4" />
               Anúncios
             </TabsTrigger>
@@ -378,6 +453,90 @@ export default function SuperAdmin() {
                           </div>
                         </div>
                       </button>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Free Trials Tab */}
+          <TabsContent value="trials" className="space-y-4 mt-4">
+            {/* Add new trial */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Gift className="h-4 w-4" />
+                  Adicionar Teste Gratuito
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <Input
+                  type="email"
+                  placeholder="Email do usuário"
+                  value={newTrialEmail}
+                  onChange={(e) => setNewTrialEmail(e.target.value)}
+                />
+                <Input
+                  placeholder="Notas (opcional)"
+                  value={newTrialNotes}
+                  onChange={(e) => setNewTrialNotes(e.target.value)}
+                />
+                <Button 
+                  className="w-full" 
+                  onClick={handleAddFreeTrial}
+                  disabled={isAddingTrial}
+                >
+                  {isAddingTrial ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <Plus className="h-4 w-4 mr-2" />
+                  )}
+                  Adicionar Teste Gratuito Ilimitado
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Trial users list */}
+            <Card className="border-0 shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base">Usuários com Teste Gratuito ({freeTrialUsers.length})</CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                {freeTrialUsers.length === 0 ? (
+                  <div className="p-8 text-center text-muted-foreground">
+                    Nenhum usuário com teste gratuito
+                  </div>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {freeTrialUsers.map((trial) => (
+                      <div key={trial.id} className="p-4 flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium truncate">{trial.email}</p>
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                            <Calendar className="h-3 w-3" />
+                            Criado: {format(new Date(trial.created_at), "dd MMM yyyy", { locale: ptBR })}
+                          </div>
+                          {trial.activated_at && (
+                            <div className="text-xs text-green-600 mt-1">
+                              ✓ Ativado em {format(new Date(trial.activated_at), "dd MMM yyyy", { locale: ptBR })}
+                            </div>
+                          )}
+                          {trial.notes && (
+                            <p className="text-xs text-muted-foreground mt-1">{trial.notes}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary">Ilimitado</Badge>
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            onClick={() => handleRemoveFreeTrial(trial.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
