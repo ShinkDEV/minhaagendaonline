@@ -721,6 +721,69 @@ export type Database = {
           },
         ]
       }
+      time_blocks: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          end_at: string
+          id: string
+          is_recurring: boolean
+          notes: string | null
+          professional_id: string
+          recurrence_days: number[] | null
+          recurrence_end_date: string | null
+          recurrence_type: string | null
+          salon_id: string
+          start_at: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          end_at: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          professional_id: string
+          recurrence_days?: number[] | null
+          recurrence_end_date?: string | null
+          recurrence_type?: string | null
+          salon_id: string
+          start_at: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          end_at?: string
+          id?: string
+          is_recurring?: boolean
+          notes?: string | null
+          professional_id?: string
+          recurrence_days?: number[] | null
+          recurrence_end_date?: string | null
+          recurrence_type?: string | null
+          salon_id?: string
+          start_at?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "time_blocks_professional_id_fkey"
+            columns: ["professional_id"]
+            isOneToOne: false
+            referencedRelation: "professionals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "time_blocks_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           id: string
