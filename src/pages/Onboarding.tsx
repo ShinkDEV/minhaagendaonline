@@ -42,17 +42,7 @@ export default function Onboarding() {
         
         if (salonError) throw salonError;
 
-        // Create salon plan with free plan
-        const { error: planError } = await supabase
-          .from('salon_plan')
-          .insert({
-            salon_id: salon.id,
-            plan_id: freePlan.id,
-          });
-        
-        if (planError) throw planError;
-
-        // Update profile with salon_id
+        // IMPORTANT: Update profile with salon_id FIRST so RLS policies work
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ salon_id: salon.id })
@@ -60,7 +50,7 @@ export default function Onboarding() {
         
         if (profileError) throw profileError;
 
-        // Add admin role
+        // Add admin role BEFORE creating salon_plan (needed for RLS)
         const { error: roleError } = await supabase
           .from('user_roles')
           .insert({
@@ -69,6 +59,16 @@ export default function Onboarding() {
           });
         
         if (roleError) throw roleError;
+
+        // Now create salon plan (user has salon_id and admin role)
+        const { error: planError } = await supabase
+          .from('salon_plan')
+          .insert({
+            salon_id: salon.id,
+            plan_id: freePlan.id,
+          });
+        
+        if (planError) throw planError;
 
         // Create the user as a professional too
         const { error: profError } = await supabase
@@ -85,6 +85,7 @@ export default function Onboarding() {
         await refreshProfile();
         navigate('/dashboard');
       } catch (error: any) {
+        console.error('Onboarding error:', error);
         toast({ variant: 'destructive', title: 'Erro ao configurar conta', description: error.message });
         setLoading(false);
       }
