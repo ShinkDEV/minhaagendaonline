@@ -17,6 +17,7 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import SuperAdmin from "./pages/SuperAdmin";
 import MyCommissions from "./pages/MyCommissions";
+import CommissionsReport from "./pages/CommissionsReport";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 
@@ -65,6 +66,7 @@ function AppRoutes() {
         <Route path="/services" element={<Servicos />} />
         <Route path="/financial" element={<Financeiro />} />
         <Route path="/reports" element={<Reports />} />
+        <Route path="/commissions" element={<CommissionsReport />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/my-commissions" element={<MyCommissions />} />
         <Route path="/profile" element={<Profile />} />
@@ -97,6 +99,7 @@ function AppRoutes() {
       <Route path="/servicos" element={<Navigate to="/services" replace />} />
       <Route path="/financial" element={<AdminRoute><Financeiro /></AdminRoute>} />
       <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
+      <Route path="/commissions" element={<AdminRoute><CommissionsReport /></AdminRoute>} />
       <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
       
       <Route path="*" element={<NotFound />} />

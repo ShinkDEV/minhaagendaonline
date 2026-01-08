@@ -1,14 +1,14 @@
-import { Calendar, Users, Scissors, LayoutDashboard, Settings, DollarSign } from 'lucide-react';
+import { Calendar, Users, LayoutDashboard, Settings, DollarSign, Percent } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
-// Items visible to admins (salon owners)
+// Items visible to admins (salon owners) - limited to 5 for mobile
 const adminNavItems = [
   { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
   { icon: Calendar, label: 'Agenda', path: '/agenda' },
   { icon: Users, label: 'Clientes', path: '/clients' },
-  { icon: Scissors, label: 'Serviços', path: '/services' },
+  { icon: Percent, label: 'Comissões', path: '/commissions' },
   { icon: Settings, label: 'Config', path: '/settings' },
 ];
 

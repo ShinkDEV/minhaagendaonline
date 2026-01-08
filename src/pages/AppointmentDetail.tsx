@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
@@ -14,6 +14,7 @@ import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { useAppointment, useUpdateAppointmentStatus } from '@/hooks/useAppointments';
 import { useCompleteAppointment } from '@/hooks/useCommissions';
+import { useServiceCommissions } from '@/hooks/useServiceCommissions';
 import { PaymentMethod } from '@/types/database';
 
 const statusLabels = {
@@ -43,6 +44,46 @@ export default function AppointmentDetail() {
   const { data: appointment, isLoading } = useAppointment(id);
   const updateStatus = useUpdateAppointmentStatus();
   const completeAppointment = useCompleteAppointment();
+  const { data: serviceCommissions = [] } = useServiceCommissions(appointment?.professional_id);
+
+  // Calculate commission based on service-specific rules or default
+  const { commissionAmount, commissionDetails } = useMemo(() => {
+    if (!appointment) return { commissionAmount: 0, commissionDetails: [] };
+    
+    const defaultPercent = appointment.professional?.commission_percent_default || 0;
+    const details: { serviceName: string; amount: number; rule: string }[] = [];
+    let total = 0;
+
+    appointment.appointment_services?.forEach((as) => {
+      const customRule = serviceCommissions.find(sc => sc.service_id === as.service_id);
+      const priceCharged = Number(as.price_charged);
+      
+      let commission = 0;
+      let rule = '';
+      
+      if (customRule) {
+        if (customRule.type === 'percent') {
+          commission = (priceCharged * customRule.value) / 100;
+          rule = `${customRule.value}%`;
+        } else {
+          commission = customRule.value;
+          rule = `R$ ${customRule.value.toFixed(2)} fixo`;
+        }
+      } else {
+        commission = (priceCharged * defaultPercent) / 100;
+        rule = `${defaultPercent}% (padrão)`;
+      }
+      
+      details.push({
+        serviceName: as.service?.name || 'Serviço',
+        amount: commission,
+        rule,
+      });
+      total += commission;
+    });
+
+    return { commissionAmount: total, commissionDetails: details };
+  }, [appointment, serviceCommissions]);
 
   if (isLoading) {
     return (
@@ -68,7 +109,6 @@ export default function AppointmentDetail() {
   }
 
   const commissionPercent = appointment.professional?.commission_percent_default || 0;
-  const commissionAmount = (Number(appointment.total_amount) * commissionPercent) / 100;
 
   const handleComplete = async () => {
     try {
@@ -258,9 +298,18 @@ export default function AppointmentDetail() {
                   <span>Valor do atendimento</span>
                   <span className="font-semibold">R$ {Number(appointment.total_amount).toFixed(2)}</span>
                 </div>
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>Comissão ({commissionPercent}%)</span>
-                  <span>R$ {commissionAmount.toFixed(2)}</span>
+                <div className="border-t border-border my-2 pt-2">
+                  <p className="text-xs text-muted-foreground mb-2">Comissões por serviço:</p>
+                  {commissionDetails.map((detail, idx) => (
+                    <div key={idx} className="flex justify-between text-sm text-muted-foreground">
+                      <span>{detail.serviceName} ({detail.rule})</span>
+                      <span>R$ {detail.amount.toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex justify-between font-semibold border-t border-border pt-2">
+                  <span>Total comissão</span>
+                  <span className="text-primary">R$ {commissionAmount.toFixed(2)}</span>
                 </div>
               </div>
             </div>
