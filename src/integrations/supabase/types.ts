@@ -932,6 +932,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_invitation_by_token: {
+        Args: { _token: string }
+        Returns: {
+          email: string
+          expires_at: string
+          id: string
+          role: string
+          salon_id: string
+          salon_name: string
+          status: string
+        }[]
+      }
       get_user_salon_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {

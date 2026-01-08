@@ -122,14 +122,28 @@ export function useInvitationByToken(token: string | null) {
     queryKey: ['invitation', token],
     queryFn: async () => {
       if (!token) return null;
+      
+      // Use the secure RPC function instead of direct table access
       const { data, error } = await supabase
-        .from('invitations')
-        .select('*, salon:salons(name)')
-        .eq('token', token)
-        .maybeSingle();
+        .rpc('get_invitation_by_token', { _token: token });
       
       if (error) throw error;
-      return data as (Invitation & { salon: { name: string } }) | null;
+      
+      // RPC returns an array, get the first item
+      const invitation = Array.isArray(data) && data.length > 0 ? data[0] : null;
+      
+      if (!invitation) return null;
+      
+      // Transform to match expected format
+      return {
+        id: invitation.id,
+        salon_id: invitation.salon_id,
+        email: invitation.email,
+        role: invitation.role,
+        status: invitation.status,
+        expires_at: invitation.expires_at,
+        salon: { name: invitation.salon_name },
+      } as Invitation & { salon: { name: string } };
     },
     enabled: !!token,
   });
