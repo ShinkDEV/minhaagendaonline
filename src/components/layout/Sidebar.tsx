@@ -24,10 +24,10 @@ const professionalNavItems = [
 export function Sidebar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, isSuperAdmin } = useAuth();
   const [collapsed, setCollapsed] = useState(false);
 
-  const navItems = isAdmin ? adminNavItems : professionalNavItems;
+  const navItems = (isAdmin || isSuperAdmin) ? adminNavItems : professionalNavItems;
 
   return (
     <aside 
