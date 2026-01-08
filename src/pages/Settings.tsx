@@ -10,9 +10,10 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Users, LogOut, Save, Plus, UserCog, Percent, Scissors, Mail } from 'lucide-react';
+import { Building2, Users, LogOut, Save, Plus, UserCog, Percent, Scissors, Mail, Trash2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { useProfessionals, useCreateProfessional, useUpdateProfessional } from '@/hooks/useProfessionals';
+import { useProfessionals, useCreateProfessional, useUpdateProfessional, useDeleteProfessional } from '@/hooks/useProfessionals';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
@@ -39,9 +40,12 @@ export default function Settings() {
   const [profName, setProfName] = useState('');
   const [profCommission, setProfCommission] = useState('40');
 
-  const { data: professionals = [] } = useProfessionals();
+  const [deletingProfessional, setDeletingProfessional] = useState<Professional | null>(null);
+
+  const { data: professionals = [] } = useProfessionals(true); // include inactive
   const createProfessional = useCreateProfessional();
   const updateProfessional = useUpdateProfessional();
+  const deleteProfessional = useDeleteProfessional();
 
   const activeProfessionalsCount = professionals.filter(p => p.active).length;
   const maxProfessionals = salonPlan?.plan?.max_professionals || 2;
@@ -135,6 +139,17 @@ export default function Settings() {
         active: !prof.active,
       });
       toast({ title: prof.active ? 'Profissional desativado' : 'Profissional ativado' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    }
+  };
+
+  const handleDeleteProfessional = async () => {
+    if (!deletingProfessional) return;
+    try {
+      await deleteProfessional.mutateAsync(deletingProfessional.id);
+      toast({ title: 'Profissional removido!' });
+      setDeletingProfessional(null);
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Erro', description: error.message });
     }
@@ -340,6 +355,15 @@ export default function Settings() {
                             >
                               <UserCog className="h-4 w-4" />
                             </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => setDeletingProfessional(prof)}
+                              title="Remover profissional"
+                              className="text-destructive hover:text-destructive"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         )}
                       </div>
@@ -429,6 +453,28 @@ export default function Settings() {
         open={showInvite} 
         onClose={() => setShowInvite(false)} 
       />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingProfessional} onOpenChange={(open) => !open && setDeletingProfessional(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remover profissional?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja remover <strong>{deletingProfessional?.display_name}</strong> da equipe? 
+              Esta ação não pode ser desfeita.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={handleDeleteProfessional}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteProfessional.isPending ? 'Removendo...' : 'Remover'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </AppLayout>
   );
 }
