@@ -14,6 +14,7 @@ import { AnnouncementBanner } from '@/components/announcements/AnnouncementBanne
 import { RevenueChart } from '@/components/dashboard/RevenueChart';
 import { ProfessionalRankingCard } from '@/components/dashboard/ProfessionalRankingCard';
 import { ServiceRankingCard } from '@/components/dashboard/ServiceRankingCard';
+import { CancellationChart } from '@/components/dashboard/CancellationChart';
 
 export default function Dashboard() {
   const { profile, salon, salonPlan, isAdmin, isSuperAdmin, user } = useAuth();
@@ -176,7 +177,10 @@ export default function Dashboard() {
         {/* Charts Section - only for admins */}
         {isAdmin && (
           <div className="space-y-4">
-            <RevenueChart />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <RevenueChart />
+              <CancellationChart />
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <ProfessionalRankingCard />
               <ServiceRankingCard />
