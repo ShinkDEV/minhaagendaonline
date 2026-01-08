@@ -1,7 +1,7 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, DollarSign, Clock, Plus, TrendingUp, AlertCircle, Crown } from 'lucide-react';
+import { Calendar, Users, DollarSign, Clock, Plus, TrendingUp, AlertCircle, Crown, XCircle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useAppointments } from '@/hooks/useAppointments';
@@ -15,6 +15,7 @@ import { RevenueChart } from '@/components/dashboard/RevenueChart';
 import { ProfessionalRankingCard } from '@/components/dashboard/ProfessionalRankingCard';
 import { ServiceRankingCard } from '@/components/dashboard/ServiceRankingCard';
 import { CancellationChart } from '@/components/dashboard/CancellationChart';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Dashboard() {
   const { profile, salon, salonPlan, isAdmin, isSuperAdmin, user } = useAuth();
@@ -39,6 +40,22 @@ export default function Dashboard() {
 
   const { data: todayAppointments = [] } = useAppointments(today);
   const { data: pendingCommissions = [] } = useCommissions('pending');
+
+  // Check if user's trial was cancelled
+  const { data: cancelledTrial } = useQuery({
+    queryKey: ['cancelled-trial', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      const { data } = await supabase
+        .from('free_trial_users')
+        .select('cancelled_at')
+        .eq('email', user.email)
+        .not('cancelled_at', 'is', null)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user?.email,
+  });
 
   // Filter appointments for professional view
   const filteredAppointments = isAdmin 
@@ -116,6 +133,26 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* Trial Cancelled Warning */}
+        {cancelledTrial && (
+          <Alert variant="destructive">
+            <XCircle className="h-4 w-4" />
+            <AlertTitle>Seu teste gratuito foi encerrado</AlertTitle>
+            <AlertDescription>
+              Seu período de teste gratuito foi cancelado. Para continuar utilizando todas as funcionalidades, 
+              por favor escolha um plano.
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="ml-2 mt-2"
+                onClick={() => navigate('/upgrade')}
+              >
+                Ver planos
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Announcements */}
         <AnnouncementBanner />
 

@@ -36,6 +36,7 @@ import { useToast } from '@/hooks/use-toast';
 import { AnnouncementManager } from '@/components/announcements/AnnouncementManager';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Ban, RotateCcw } from 'lucide-react';
 
 // Preços estimados por plano (em R$)
 const PLAN_PRICES: Record<string, number> = {
@@ -290,6 +291,38 @@ export default function SuperAdmin() {
       if (error) throw error;
 
       toast({ title: 'Teste gratuito removido' });
+      refetchTrials();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    }
+  };
+
+  const handleCancelFreeTrial = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('free_trial_users')
+        .update({ cancelled_at: new Date().toISOString() })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({ title: 'Teste gratuito cancelado' });
+      refetchTrials();
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    }
+  };
+
+  const handleReactivateFreeTrial = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('free_trial_users')
+        .update({ cancelled_at: null })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      toast({ title: 'Teste gratuito reativado' });
       refetchTrials();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Erro', description: error.message });
@@ -678,16 +711,21 @@ export default function SuperAdmin() {
                 ) : (
                   <div className="divide-y divide-border">
                     {freeTrialUsers.map((trial) => (
-                      <div key={trial.id} className="p-4 flex items-center justify-between">
+                      <div key={trial.id} className={`p-4 flex items-center justify-between ${trial.cancelled_at ? 'bg-destructive/5' : ''}`}>
                         <div className="flex-1 min-w-0">
                           <p className="font-medium truncate">{trial.email}</p>
                           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                             <Calendar className="h-3 w-3" />
                             Criado: {format(new Date(trial.created_at), "dd MMM yyyy", { locale: ptBR })}
                           </div>
-                          {trial.activated_at && (
+                          {trial.activated_at && !trial.cancelled_at && (
                             <div className="text-xs text-green-600 mt-1">
                               ✓ Ativado em {format(new Date(trial.activated_at), "dd MMM yyyy", { locale: ptBR })}
+                            </div>
+                          )}
+                          {trial.cancelled_at && (
+                            <div className="text-xs text-destructive mt-1">
+                              ✗ Cancelado em {format(new Date(trial.cancelled_at), "dd MMM yyyy", { locale: ptBR })}
                             </div>
                           )}
                           {trial.notes && (
@@ -695,11 +733,35 @@ export default function SuperAdmin() {
                           )}
                         </div>
                         <div className="flex items-center gap-2">
-                          <Badge variant="secondary">Ilimitado</Badge>
+                          {trial.cancelled_at ? (
+                            <Badge variant="destructive">Cancelado</Badge>
+                          ) : (
+                            <Badge variant="secondary">Ilimitado</Badge>
+                          )}
+                          {trial.cancelled_at ? (
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleReactivateFreeTrial(trial.id)}
+                              title="Reativar trial"
+                            >
+                              <RotateCcw className="h-4 w-4 text-green-600" />
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="icon"
+                              onClick={() => handleCancelFreeTrial(trial.id)}
+                              title="Cancelar trial"
+                            >
+                              <Ban className="h-4 w-4 text-orange-500" />
+                            </Button>
+                          )}
                           <Button 
                             variant="ghost" 
                             size="icon"
                             onClick={() => handleRemoveFreeTrial(trial.id)}
+                            title="Remover permanentemente"
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
