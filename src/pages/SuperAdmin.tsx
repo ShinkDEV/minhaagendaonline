@@ -175,7 +175,10 @@ export default function SuperAdmin() {
         <div className="flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-2">
             <Crown className="h-5 w-5 text-primary" />
-            <h1 className="font-semibold">Super Admin</h1>
+            <div>
+              <h1 className="font-semibold text-sm">Painel do Proprietário</h1>
+              <p className="text-[10px] text-muted-foreground">Gerenciamento de clientes</p>
+            </div>
           </div>
           <Button variant="ghost" size="icon" onClick={signOut}>
             <LogOut className="h-5 w-5" />
