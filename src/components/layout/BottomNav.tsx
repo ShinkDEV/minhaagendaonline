@@ -1,8 +1,10 @@
-import { Calendar, Users, Scissors, LayoutDashboard, Settings } from 'lucide-react';
+import { Calendar, Users, Scissors, LayoutDashboard, Settings, DollarSign } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
-const navItems = [
+// Items visible to admins (salon owners)
+const adminNavItems = [
   { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
   { icon: Calendar, label: 'Agenda', path: '/agenda' },
   { icon: Users, label: 'Clientes', path: '/clients' },
@@ -10,9 +12,20 @@ const navItems = [
   { icon: Settings, label: 'Config', path: '/settings' },
 ];
 
+// Items visible to professionals (limited access)
+const professionalNavItems = [
+  { icon: LayoutDashboard, label: 'Home', path: '/dashboard' },
+  { icon: Calendar, label: 'Agenda', path: '/agenda' },
+  { icon: DollarSign, label: 'Comissões', path: '/my-commissions' },
+  { icon: Settings, label: 'Perfil', path: '/profile' },
+];
+
 export function BottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { isAdmin } = useAuth();
+
+  const navItems = isAdmin ? adminNavItems : professionalNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t border-border safe-area-bottom z-50">
