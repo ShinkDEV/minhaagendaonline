@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Users, LogOut, Save, Plus, UserCog, Percent, Scissors } from 'lucide-react';
+import { Building2, Users, LogOut, Save, Plus, UserCog, Percent, Scissors, Mail } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfessionals, useCreateProfessional, useUpdateProfessional } from '@/hooks/useProfessionals';
 import { useToast } from '@/hooks/use-toast';
@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { Professional } from '@/types/database';
 import { ProfessionalCommissions } from '@/components/ProfessionalCommissions';
+import { InviteProfessional } from '@/components/InviteProfessional';
 
 export default function Settings() {
   const { salon, profile, salonPlan, isAdmin, signOut, refreshProfile } = useAuth();
@@ -32,6 +33,7 @@ export default function Settings() {
   
   // Professional form
   const [showNewProfessional, setShowNewProfessional] = useState(false);
+  const [showInvite, setShowInvite] = useState(false);
   const [editingProfessional, setEditingProfessional] = useState<Professional | null>(null);
   const [commissionsForProfessional, setCommissionsForProfessional] = useState<Professional | null>(null);
   const [profName, setProfName] = useState('');
@@ -262,6 +264,18 @@ export default function Settings() {
 
           {/* Team Tab */}
           <TabsContent value="team" className="space-y-4 mt-4">
+            {/* Invite Button */}
+            {isAdmin && (
+              <Button 
+                variant="outline" 
+                className="w-full"
+                onClick={() => setShowInvite(true)}
+              >
+                <Mail className="h-4 w-4 mr-2" />
+                Convidar Profissional
+              </Button>
+            )}
+
             {/* Limit warning */}
             {!canAddProfessional && (
               <Card className="border-orange-200 bg-orange-50">
@@ -409,6 +423,12 @@ export default function Settings() {
           onClose={() => setCommissionsForProfessional(null)} 
         />
       )}
+
+      {/* Invite Professional Sheet */}
+      <InviteProfessional 
+        open={showInvite} 
+        onClose={() => setShowInvite(false)} 
+      />
     </AppLayout>
   );
 }
