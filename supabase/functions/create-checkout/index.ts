@@ -142,7 +142,7 @@ serve(async (req) => {
         },
       ],
       mode: "subscription",
-      success_url: `${origin}/settings?success=true`,
+      success_url: `${origin}/payment-success`,
       cancel_url: `${origin}/site?canceled=true`,
       metadata: {
         user_id: user?.id || 'guest',

@@ -26,6 +26,7 @@ import NotFound from "./pages/NotFound";
 import LandingPage from "./pages/LandingPage";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
+import PaymentSuccess from "./pages/PaymentSuccess";
 
 const queryClient = new QueryClient();
 
@@ -55,6 +56,7 @@ function AppRoutes() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/site" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/invite/:token" element={<AcceptInvite />} />
