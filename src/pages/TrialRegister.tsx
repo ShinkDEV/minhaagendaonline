@@ -79,19 +79,8 @@ export default function TrialRegister() {
         console.error('Error adding to free trial:', trialError);
       }
 
-      // Increment usage count - direct update
-      const { data: currentLink } = await supabase
-        .from('trial_invite_links')
-        .select('usage_count')
-        .eq('id', linkData.id)
-        .single();
-      
-      if (currentLink) {
-        await supabase
-          .from('trial_invite_links')
-          .update({ usage_count: (currentLink.usage_count || 0) + 1 })
-          .eq('id', linkData.id);
-      }
+      // Increment usage count atomically using RPC function
+      await supabase.rpc('increment_trial_link_usage', { link_id: linkData.id });
 
       toast({
         title: "Conta criada com sucesso!",
