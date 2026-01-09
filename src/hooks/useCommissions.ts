@@ -33,9 +33,16 @@ export function useCommissions(status?: CommissionStatus) {
   });
 }
 
+export interface ProductSale {
+  productId: string;
+  quantity: number;
+  price: number;
+  name: string;
+}
+
 export function useCompleteAppointment() {
   const queryClient = useQueryClient();
-  const { salon } = useAuth();
+  const { salon, user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ 
@@ -43,35 +50,44 @@ export function useCompleteAppointment() {
       paymentMethod, 
       amount,
       professionalId,
-      commissionAmount 
+      commissionAmount,
+      productSales = []
     }: { 
       appointmentId: string; 
       paymentMethod: PaymentMethod;
       amount: number;
       professionalId: string;
       commissionAmount: number;
+      productSales?: ProductSale[];
     }) => {
       if (!salon?.id) throw new Error('No salon');
 
-      // Update appointment status
+      // Calculate total including products
+      const productsTotal = productSales.reduce((acc, p) => acc + (p.price * p.quantity), 0);
+      const totalAmount = amount + productsTotal;
+
+      // Update appointment status and total
       const { error: appointmentError } = await supabase
         .from('appointments')
-        .update({ status: 'completed' })
+        .update({ 
+          status: 'completed',
+          total_amount: totalAmount
+        })
         .eq('id', appointmentId);
       if (appointmentError) throw appointmentError;
 
-      // Create payment
+      // Create payment with total (services + products)
       const { error: paymentError } = await supabase
         .from('payments')
         .insert({
           salon_id: salon.id,
           appointment_id: appointmentId,
           method: paymentMethod,
-          amount,
+          amount: totalAmount,
         });
       if (paymentError) throw paymentError;
 
-      // Create commission
+      // Create commission (only on services, not products)
       const { error: commissionError } = await supabase
         .from('commissions')
         .insert({
@@ -83,7 +99,7 @@ export function useCompleteAppointment() {
         });
       if (commissionError) throw commissionError;
 
-      // Create cashflow entry for income
+      // Create cashflow entry for services income
       const { error: cashflowError } = await supabase
         .from('cashflow_entries')
         .insert({
@@ -94,11 +110,45 @@ export function useCompleteAppointment() {
           related_appointment_id: appointmentId,
         });
       if (cashflowError) throw cashflowError;
+
+      // Process product sales
+      if (productSales.length > 0) {
+        // Create cashflow entry for products income
+        const { error: productsCashflowError } = await supabase
+          .from('cashflow_entries')
+          .insert({
+            salon_id: salon.id,
+            type: 'income',
+            amount: productsTotal,
+            description: `Venda de produtos (${productSales.map(p => p.name).join(', ')})`,
+            related_appointment_id: appointmentId,
+          });
+        if (productsCashflowError) throw productsCashflowError;
+
+        // Create product movements (stock out)
+        for (const sale of productSales) {
+          const { error: movementError } = await supabase
+            .from('product_movements')
+            .insert({
+              salon_id: salon.id,
+              product_id: sale.productId,
+              type: 'out',
+              quantity: sale.quantity,
+              reason: 'sale',
+              notes: `Venda durante atendimento`,
+              related_appointment_id: appointmentId,
+              created_by: user?.id,
+            });
+          if (movementError) throw movementError;
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
       queryClient.invalidateQueries({ queryKey: ['commissions'] });
       queryClient.invalidateQueries({ queryKey: ['cashflow-entries'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['product-movements'] });
     },
   });
 }
