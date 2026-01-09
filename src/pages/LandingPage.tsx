@@ -46,6 +46,7 @@ const scrollToSection = (sectionId: string) => {
 
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<'admin' | 'professional'>('admin');
 
   useEffect(() => {
     trackPageView('/');
@@ -473,83 +474,109 @@ export default function LandingPage() {
       {/* Roles Comparison */}
       <section className="py-16 bg-muted/50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
+          <div className="text-center mb-8">
             <h2 className="text-2xl md:text-3xl font-bold mb-4">O que cada perfil pode fazer</h2>
-            <p className="text-muted-foreground max-w-2xl mx-auto">
+            <p className="text-muted-foreground max-w-2xl mx-auto mb-8">
               Permissões diferentes para administradores e profissionais.
             </p>
+
+            {/* Toggle Buttons */}
+            <div className="inline-flex rounded-lg border bg-card p-1 gap-1">
+              <Button
+                variant={selectedRole === 'admin' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSelectedRole('admin')}
+                className="gap-2"
+              >
+                <Shield className="h-4 w-4" />
+                Para o administrador
+              </Button>
+              <Button
+                variant={selectedRole === 'professional' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setSelectedRole('professional')}
+                className="gap-2"
+              >
+                <Scissors className="h-4 w-4" />
+                Para o profissional
+              </Button>
+            </div>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-            {/* Admin */}
-            <Card className="border-primary/30">
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                    <Shield className="h-5 w-5 text-primary-foreground" />
+          <div className="max-w-lg mx-auto">
+            {/* Admin Card */}
+            {selectedRole === 'admin' && (
+              <Card className="border-primary/30">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
+                      <Shield className="h-5 w-5 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Administrador</CardTitle>
+                      <CardDescription>Controle total do salão</CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">Administrador</CardTitle>
-                    <CardDescription>Controle total do salão</CardDescription>
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {[
-                    'Criar e gerenciar agendamentos',
-                    'Cadastrar profissionais e serviços',
-                    'Cadastrar e editar clientes',
-                    'Definir preços e comissões',
-                    'Ver relatórios completos',
-                    'Controlar entradas e saídas financeiras',
-                    'Convidar novos membros da equipe',
-                    'Gerenciar configurações do salão',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-            </Card>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    {[
+                      'Criar e gerenciar agendamentos',
+                      'Cadastrar profissionais e serviços',
+                      'Cadastrar e editar clientes',
+                      'Definir preços e comissões',
+                      'Ver relatórios completos',
+                      'Controlar entradas e saídas financeiras',
+                      'Convidar novos membros da equipe',
+                      'Gerenciar configurações do salão',
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Professional */}
-            <Card>
-              <CardHeader className="pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
-                    <Scissors className="h-5 w-5 text-secondary-foreground" />
+            {/* Professional Card */}
+            {selectedRole === 'professional' && (
+              <Card>
+                <CardHeader className="pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
+                      <Scissors className="h-5 w-5 text-secondary-foreground" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">Profissional</CardTitle>
+                      <CardDescription>Foco no atendimento</CardDescription>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">Profissional</CardTitle>
-                    <CardDescription>Foco no atendimento</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <ul className="space-y-3">
+                    {[
+                      'Ver sua própria agenda',
+                      'Visualizar detalhes dos agendamentos',
+                      'Ver suas próprias comissões',
+                      'Acompanhar histórico de atendimentos',
+                      'Atualizar seu perfil',
+                    ].map((item, i) => (
+                      <li key={i} className="flex items-start gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-4 pt-4 border-t">
+                    <p className="text-xs text-muted-foreground">
+                      Profissionais têm acesso focado para visualizar apenas o que é relevante para seu trabalho.
+                    </p>
                   </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-3">
-                  {[
-                    'Ver sua própria agenda',
-                    'Visualizar detalhes dos agendamentos',
-                    'Ver suas próprias comissões',
-                    'Acompanhar histórico de atendimentos',
-                    'Atualizar seu perfil',
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-start gap-2 text-sm">
-                      <CheckCircle2 className="h-4 w-4 text-primary mt-0.5 shrink-0" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="mt-4 pt-4 border-t">
-                  <p className="text-xs text-muted-foreground">
-                    Profissionais têm acesso focado para visualizar apenas o que é relevante para seu trabalho.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </div>
       </section>
