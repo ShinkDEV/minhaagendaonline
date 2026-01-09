@@ -506,7 +506,7 @@ export default function LandingPage() {
           <div className="max-w-lg mx-auto">
             {/* Admin Card */}
             {selectedRole === 'admin' && (
-              <Card className="border-primary/30">
+              <Card className="border-primary/30 animate-fade-in">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
@@ -542,7 +542,7 @@ export default function LandingPage() {
 
             {/* Professional Card */}
             {selectedRole === 'professional' && (
-              <Card>
+              <Card className="animate-fade-in">
                 <CardHeader className="pb-4">
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-lg bg-secondary flex items-center justify-center">
