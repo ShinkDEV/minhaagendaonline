@@ -8,7 +8,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, Clock, User, Scissors, DollarSign, Phone, CheckCircle, XCircle } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Separator } from '@/components/ui/separator';
+import { ArrowLeft, Clock, User, Scissors, DollarSign, Phone, CheckCircle, XCircle, Package } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
@@ -16,6 +18,7 @@ import { useAppointment, useUpdateAppointmentStatus } from '@/hooks/useAppointme
 import { useCompleteAppointment } from '@/hooks/useCommissions';
 import { useServiceCommissions } from '@/hooks/useServiceCommissions';
 import { PaymentMethod } from '@/types/database';
+import { ProductSelector, SelectedProduct } from '@/components/ProductSelector';
 
 const statusLabels = {
   confirmed: { label: 'Confirmado', color: 'bg-primary' },
@@ -40,6 +43,7 @@ export default function AppointmentDetail() {
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [cancelReason, setCancelReason] = useState('');
+  const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
 
   const { data: appointment, isLoading } = useAppointment(id);
   const updateStatus = useUpdateAppointmentStatus();
@@ -110,6 +114,13 @@ export default function AppointmentDetail() {
 
   const commissionPercent = appointment.professional?.commission_percent_default || 0;
 
+  const productsTotal = selectedProducts.reduce(
+    (acc, sp) => acc + sp.product.price * sp.quantity,
+    0
+  );
+  
+  const grandTotal = Number(appointment.total_amount) + productsTotal;
+
   const handleComplete = async () => {
     try {
       await completeAppointment.mutateAsync({
@@ -118,8 +129,15 @@ export default function AppointmentDetail() {
         amount: Number(appointment.total_amount),
         professionalId: appointment.professional_id,
         commissionAmount,
+        productSales: selectedProducts.map(sp => ({
+          productId: sp.product.id,
+          quantity: sp.quantity,
+          price: sp.product.price,
+          name: sp.product.name,
+        })),
       });
       setShowCompleteDialog(false);
+      setSelectedProducts([]);
       toast({ title: 'Atendimento concluído!' });
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Erro', description: error.message });
@@ -272,47 +290,80 @@ export default function AppointmentDetail() {
         )}
 
         {/* Complete Dialog */}
-        <Dialog open={showCompleteDialog} onOpenChange={setShowCompleteDialog}>
-          <DialogContent>
+        <Dialog open={showCompleteDialog} onOpenChange={(open) => {
+          setShowCompleteDialog(open);
+          if (!open) setSelectedProducts([]);
+        }}>
+          <DialogContent className="max-w-md max-h-[90vh]">
             <DialogHeader>
               <DialogTitle>Concluir Atendimento</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label>Forma de Pagamento</Label>
-                <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {paymentMethods.map((pm) => (
-                      <SelectItem key={pm.value} value={pm.value}>
-                        {pm.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="bg-muted p-4 rounded-lg space-y-2">
-                <div className="flex justify-between">
-                  <span>Valor do atendimento</span>
-                  <span className="font-semibold">R$ {Number(appointment.total_amount).toFixed(2)}</span>
+            <ScrollArea className="max-h-[60vh] pr-4">
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label>Forma de Pagamento</Label>
+                  <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {paymentMethods.map((pm) => (
+                        <SelectItem key={pm.value} value={pm.value}>
+                          {pm.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="border-t border-border my-2 pt-2">
-                  <p className="text-xs text-muted-foreground mb-2">Comissões por serviço:</p>
-                  {commissionDetails.map((detail, idx) => (
-                    <div key={idx} className="flex justify-between text-sm text-muted-foreground">
-                      <span>{detail.serviceName} ({detail.rule})</span>
-                      <span>R$ {detail.amount.toFixed(2)}</span>
+
+                <Separator />
+
+                {/* Product Selector */}
+                <ProductSelector 
+                  selectedProducts={selectedProducts}
+                  onProductsChange={setSelectedProducts}
+                />
+
+                <Separator />
+
+                {/* Summary */}
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <div className="flex justify-between">
+                    <span>Serviços</span>
+                    <span className="font-semibold">R$ {Number(appointment.total_amount).toFixed(2)}</span>
+                  </div>
+                  
+                  {productsTotal > 0 && (
+                    <div className="flex justify-between">
+                      <span className="flex items-center gap-1">
+                        <Package className="h-3 w-3" />
+                        Produtos ({selectedProducts.length})
+                      </span>
+                      <span className="font-semibold">R$ {productsTotal.toFixed(2)}</span>
                     </div>
-                  ))}
-                </div>
-                <div className="flex justify-between font-semibold border-t border-border pt-2">
-                  <span>Total comissão</span>
-                  <span className="text-primary">R$ {commissionAmount.toFixed(2)}</span>
+                  )}
+
+                  <div className="flex justify-between font-bold border-t border-border pt-2">
+                    <span>Total a Pagar</span>
+                    <span className="text-primary text-lg">R$ {grandTotal.toFixed(2)}</span>
+                  </div>
+
+                  <div className="border-t border-border my-2 pt-2">
+                    <p className="text-xs text-muted-foreground mb-2">Comissões por serviço:</p>
+                    {commissionDetails.map((detail, idx) => (
+                      <div key={idx} className="flex justify-between text-sm text-muted-foreground">
+                        <span>{detail.serviceName} ({detail.rule})</span>
+                        <span>R$ {detail.amount.toFixed(2)}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <div className="flex justify-between font-semibold border-t border-border pt-2">
+                    <span>Total comissão</span>
+                    <span className="text-primary">R$ {commissionAmount.toFixed(2)}</span>
+                  </div>
                 </div>
               </div>
-            </div>
+            </ScrollArea>
             <DialogFooter>
               <Button variant="outline" onClick={() => setShowCompleteDialog(false)}>
                 Cancelar
