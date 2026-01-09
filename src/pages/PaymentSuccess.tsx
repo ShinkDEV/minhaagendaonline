@@ -136,8 +136,15 @@ export default function PaymentSuccess() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {nextSteps.map((step, i) => (
-                    <div key={i} className="flex items-start gap-4">
-                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <div 
+                      key={i} 
+                      className="flex items-start gap-4 animate-fade-in opacity-0"
+                      style={{ 
+                        animationDelay: `${i * 150}ms`,
+                        animationFillMode: 'forwards'
+                      }}
+                    >
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary shrink-0">
                         <step.icon className="h-5 w-5" />
                       </div>
                       <div>
