@@ -6,8 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import logo from '@/assets/logo.png';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -59,9 +59,7 @@ export default function Login() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-8">
-          <div className="h-16 w-16 rounded-2xl bg-primary flex items-center justify-center mb-4">
-            <Calendar className="h-8 w-8 text-primary-foreground" />
-          </div>
+          <img src={logo} alt="Logo" className="h-20 w-auto mb-4" />
           <h1 className="text-2xl font-bold text-foreground">Minha Agenda Online</h1>
           <p className="text-muted-foreground mt-1">Gerencie seu salão com facilidade</p>
         </div>
