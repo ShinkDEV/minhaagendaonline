@@ -129,6 +129,10 @@ export default function PaymentSuccess() {
                 </p>
               </div>
 
+              <Button size="lg" className="gap-2" onClick={() => setStep('register')}>
+                Criar minha conta <ArrowRight className="h-4 w-4" />
+              </Button>
+
               <Card className="text-left">
                 <CardHeader>
                   <CardTitle className="text-lg">Próximos passos</CardTitle>
