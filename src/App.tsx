@@ -13,6 +13,7 @@ import Clientes from "./pages/Clientes";
 import ClientDetail from "./pages/ClientDetail";
 import Servicos from "./pages/Servicos";
 import Financeiro from "./pages/Financeiro";
+import Estoque from "./pages/Estoque";
 import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import SuperAdmin from "./pages/SuperAdmin";
@@ -84,6 +85,7 @@ function AppRoutes() {
         <Route path="/clients/:id" element={<ClientDetail />} />
         <Route path="/services" element={<Servicos />} />
         <Route path="/financial" element={<Financeiro />} />
+        <Route path="/stock" element={<Estoque />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/commissions" element={<CommissionsReport />} />
         <Route path="/settings" element={<Settings />} />
@@ -125,6 +127,7 @@ function AppRoutes() {
       <Route path="/services" element={<AdminRoute><Servicos /></AdminRoute>} />
       <Route path="/servicos" element={<Navigate to="/services" replace />} />
       <Route path="/financial" element={<AdminRoute><Financeiro /></AdminRoute>} />
+      <Route path="/stock" element={<AdminRoute><Estoque /></AdminRoute>} />
       <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
       <Route path="/commissions" element={<AdminRoute><CommissionsReport /></AdminRoute>} />
       <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
