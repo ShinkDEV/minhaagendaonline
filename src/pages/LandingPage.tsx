@@ -481,12 +481,16 @@ export default function LandingPage() {
             </p>
 
             {/* Toggle Buttons */}
-            <div className="inline-flex rounded-lg border bg-card p-1 gap-1">
+            <div className="inline-flex rounded-lg border bg-card p-1 gap-1 shadow-sm">
               <Button
                 variant={selectedRole === 'admin' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedRole('admin')}
-                className="gap-1.5 px-3"
+                className={`gap-1.5 px-3 transition-all duration-200 ${
+                  selectedRole === 'admin' 
+                    ? 'shadow-md scale-[1.02]' 
+                    : 'hover:scale-105 hover:bg-muted'
+                }`}
               >
                 <Shield className="h-4 w-4 shrink-0" />
                 <span>Admin</span>
@@ -495,7 +499,11 @@ export default function LandingPage() {
                 variant={selectedRole === 'professional' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedRole('professional')}
-                className="gap-1.5 px-3"
+                className={`gap-1.5 px-3 transition-all duration-200 ${
+                  selectedRole === 'professional' 
+                    ? 'shadow-md scale-[1.02]' 
+                    : 'hover:scale-105 hover:bg-muted'
+                }`}
               >
                 <Scissors className="h-4 w-4 shrink-0" />
                 <span>Profissional</span>
