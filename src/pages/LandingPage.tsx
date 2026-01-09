@@ -488,8 +488,8 @@ export default function LandingPage() {
                 onClick={() => setSelectedRole('admin')}
                 className={`gap-1.5 px-3 transition-all duration-200 ${
                   selectedRole === 'admin' 
-                    ? 'shadow-md scale-[1.02]' 
-                    : 'hover:scale-105 hover:bg-muted'
+                    ? 'shadow-md' 
+                    : 'animate-subtle-pulse hover:animate-none hover:scale-105 hover:bg-muted'
                 }`}
               >
                 <Shield className="h-4 w-4 shrink-0" />
@@ -501,8 +501,8 @@ export default function LandingPage() {
                 onClick={() => setSelectedRole('professional')}
                 className={`gap-1.5 px-3 transition-all duration-200 ${
                   selectedRole === 'professional' 
-                    ? 'shadow-md scale-[1.02]' 
-                    : 'hover:scale-105 hover:bg-muted'
+                    ? 'shadow-md' 
+                    : 'animate-subtle-pulse hover:animate-none hover:scale-105 hover:bg-muted'
                 }`}
               >
                 <Scissors className="h-4 w-4 shrink-0" />
