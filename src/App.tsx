@@ -23,6 +23,9 @@ import Profile from "./pages/Profile";
 import Upgrade from "./pages/Upgrade";
 import TrialRegister from "./pages/TrialRegister";
 import NotFound from "./pages/NotFound";
+import LandingPage from "./pages/LandingPage";
+import Terms from "./pages/Terms";
+import Privacy from "./pages/Privacy";
 
 const queryClient = new QueryClient();
 
@@ -49,10 +52,13 @@ function AppRoutes() {
   if (!user) {
     return (
       <Routes>
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
         <Route path="/invite/:token" element={<AcceptInvite />} />
         <Route path="/trial-register/:code" element={<TrialRegister />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
   }
