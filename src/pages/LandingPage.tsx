@@ -481,21 +481,21 @@ export default function LandingPage() {
             </p>
 
             {/* Toggle Buttons */}
-            <div className="inline-flex flex-col sm:flex-row rounded-lg border bg-card p-1 gap-1 w-full sm:w-auto max-w-sm mx-auto sm:max-w-none">
+            <div className="inline-flex rounded-lg border bg-card p-1 gap-1">
               <Button
                 variant={selectedRole === 'admin' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedRole('admin')}
-                className="gap-2 text-xs sm:text-sm"
+                className="gap-1.5 px-3"
               >
                 <Shield className="h-4 w-4 shrink-0" />
-                <span>Administrador</span>
+                <span>Admin</span>
               </Button>
               <Button
                 variant={selectedRole === 'professional' ? 'default' : 'ghost'}
                 size="sm"
                 onClick={() => setSelectedRole('professional')}
-                className="gap-2 text-xs sm:text-sm"
+                className="gap-1.5 px-3"
               >
                 <Scissors className="h-4 w-4 shrink-0" />
                 <span>Profissional</span>
