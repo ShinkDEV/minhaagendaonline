@@ -29,6 +29,7 @@ import {
   MessageCircle,
 } from 'lucide-react';
 import { useState } from 'react';
+import logo from '@/assets/logo.png';
 
 // Analytics helper
 const handleCTAClick = (ctaName: string) => {
@@ -198,7 +199,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-2">
-              <Calendar className="h-6 w-6 text-primary" />
+              <img src={logo} alt="Minha Agenda Online" className="h-8 w-auto" />
               <span className="font-bold text-lg">Minha Agenda Online</span>
             </div>
 
@@ -617,7 +618,7 @@ export default function LandingPage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
+              <img src={logo} alt="Minha Agenda Online" className="h-6 w-auto" />
               <span className="font-semibold">Minha Agenda Online</span>
             </div>
 
