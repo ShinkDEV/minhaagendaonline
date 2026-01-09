@@ -1,5 +1,7 @@
-import { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -28,7 +30,7 @@ import {
   ClipboardList,
   MessageCircle,
 } from 'lucide-react';
-import { useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
 // Analytics helper
@@ -47,10 +49,48 @@ const scrollToSection = (sectionId: string) => {
 export default function LandingPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedRole, setSelectedRole] = useState<'admin' | 'professional'>('admin');
+  const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     trackPageView('/');
   }, []);
+
+  const handleSelectPlan = async (planCode: string) => {
+    setLoadingPlan(planCode);
+    handleCTAClick(`plan-${planCode}`);
+    
+    try {
+      // Check if user is logged in
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        // Redirect to login with plan code in URL
+        navigate(`/login?plan=${planCode}`);
+        return;
+      }
+
+      const { data, error } = await supabase.functions.invoke('create-checkout', {
+        body: { planCode },
+      });
+
+      if (error) throw error;
+
+      if (data?.url) {
+        window.open(data.url, '_blank');
+      }
+    } catch (error: any) {
+      console.error('Error creating checkout:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao iniciar checkout',
+        description: error.message || 'Tente novamente mais tarde.',
+      });
+    } finally {
+      setLoadingPlan(null);
+    }
+  };
 
   const navLinks = [
     { label: 'Como funciona', href: 'como-funciona' },
@@ -108,6 +148,7 @@ export default function LandingPage() {
 
   const plans = [
     {
+      code: 'basic',
       name: 'Basic',
       price: 'R$ 29',
       period: '/mês',
@@ -116,6 +157,7 @@ export default function LandingPage() {
       highlighted: false,
     },
     {
+      code: 'basic_plus',
       name: 'Basic+',
       price: 'R$ 49',
       period: '/mês',
@@ -124,6 +166,7 @@ export default function LandingPage() {
       highlighted: true,
     },
     {
+      code: 'pro',
       name: 'Pro',
       price: 'R$ 79',
       period: '/mês',
@@ -132,6 +175,7 @@ export default function LandingPage() {
       highlighted: false,
     },
     {
+      code: 'pro_plus',
       name: 'Pro+',
       price: 'R$ 99',
       period: '/mês',
@@ -140,6 +184,7 @@ export default function LandingPage() {
       highlighted: false,
     },
     {
+      code: 'super',
       name: 'Super',
       price: 'R$ 299',
       period: '/mês',
@@ -643,15 +688,21 @@ export default function LandingPage() {
                       </li>
                     ))}
                   </ul>
-                  <Link to="/login">
-                    <Button 
-                      className="w-full" 
-                      variant={plan.highlighted ? 'default' : 'outline'}
-                      onClick={() => handleCTAClick(`plan-${plan.name.toLowerCase()}`)}
-                    >
-                      Escolher plano
-                    </Button>
-                  </Link>
+                  <Button 
+                    className="w-full" 
+                    variant={plan.highlighted ? 'default' : 'outline'}
+                    disabled={loadingPlan === plan.code}
+                    onClick={() => handleSelectPlan(plan.code)}
+                  >
+                    {loadingPlan === plan.code ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        Processando...
+                      </>
+                    ) : (
+                      'Escolher plano'
+                    )}
+                  </Button>
                 </CardContent>
               </Card>
             ))}
