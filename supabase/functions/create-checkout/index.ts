@@ -54,17 +54,6 @@ serve(async (req) => {
       Deno.env.get("SUPABASE_ANON_KEY") ?? ""
     );
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) throw new Error("No authorization header provided");
-    logStep("Authorization header found");
-
-    const token = authHeader.replace("Bearer ", "");
-    const { data: userData, error: userError } = await supabaseClient.auth.getUser(token);
-    if (userError) throw new Error(`Authentication error: ${userError.message}`);
-    const user = userData.user;
-    if (!user?.email) throw new Error("User not authenticated or email not available");
-    logStep("User authenticated", { userId: user.id, email: user.email });
-
     // Get plan code from request body
     const { planCode } = await req.json();
     if (!planCode || !PLAN_PRICES[planCode]) {
@@ -73,14 +62,28 @@ serve(async (req) => {
     const priceId = PLAN_PRICES[planCode];
     logStep("Plan selected", { planCode, priceId });
 
+    // Try to get user if authenticated (optional)
+    let user = null;
+    const authHeader = req.headers.get("Authorization");
+    if (authHeader) {
+      const token = authHeader.replace("Bearer ", "");
+      const { data: userData } = await supabaseClient.auth.getUser(token);
+      user = userData?.user;
+      if (user?.email) {
+        logStep("User authenticated", { userId: user.id, email: user.email });
+      }
+    }
+
     const stripe = new Stripe(stripeKey, { apiVersion: "2025-08-27.basil" });
     
-    // Check if customer already exists
-    const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+    // Check if customer already exists (only if user is authenticated)
     let customerId: string | undefined;
-    if (customers.data.length > 0) {
-      customerId = customers.data[0].id;
-      logStep("Found existing Stripe customer", { customerId });
+    if (user?.email) {
+      const customers = await stripe.customers.list({ email: user.email, limit: 1 });
+      if (customers.data.length > 0) {
+        customerId = customers.data[0].id;
+        logStep("Found existing Stripe customer", { customerId });
+      }
     }
 
     const origin = req.headers.get("origin") || "http://localhost:5173";
@@ -131,7 +134,7 @@ serve(async (req) => {
     // No active subscription, create new checkout session
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      customer_email: customerId ? undefined : user.email,
+      customer_email: customerId ? undefined : user?.email,
       line_items: [
         {
           price: priceId,
@@ -140,9 +143,9 @@ serve(async (req) => {
       ],
       mode: "subscription",
       success_url: `${origin}/settings?success=true`,
-      cancel_url: `${origin}/settings?canceled=true`,
+      cancel_url: `${origin}/site?canceled=true`,
       metadata: {
-        user_id: user.id,
+        user_id: user?.id || 'guest',
         plan_code: planCode,
       },
     });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
@@ -51,7 +51,6 @@ export default function LandingPage() {
   const [selectedRole, setSelectedRole] = useState<'admin' | 'professional'>('admin');
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
   const { toast } = useToast();
-  const navigate = useNavigate();
 
   useEffect(() => {
     trackPageView('/');
@@ -62,15 +61,6 @@ export default function LandingPage() {
     handleCTAClick(`plan-${planCode}`);
     
     try {
-      // Check if user is logged in
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        // Redirect to login with plan code in URL
-        navigate(`/login?plan=${planCode}`);
-        return;
-      }
-
       const { data, error } = await supabase.functions.invoke('create-checkout', {
         body: { planCode },
       });
