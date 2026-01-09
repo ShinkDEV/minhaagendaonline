@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { CheckCircle2, Loader2, ArrowRight, Calendar, Users, BarChart3 } from 'lucide-react';
+import { CheckCircle2, Loader2, ArrowRight, Calendar, Users, Scissors, DollarSign, CalendarCheck } from 'lucide-react';
 import logo from '@/assets/logo.png';
 
 export default function PaymentSuccess() {
@@ -91,9 +91,11 @@ export default function PaymentSuccess() {
   };
 
   const nextSteps = [
-    { icon: Users, title: 'Cadastre sua equipe', description: 'Adicione os profissionais do seu salão' },
-    { icon: Calendar, title: 'Configure sua agenda', description: 'Defina horários de funcionamento' },
-    { icon: BarChart3, title: 'Comece a agendar', description: 'Agende clientes e acompanhe resultados' },
+    { icon: Calendar, title: 'Cadastre seu Salão', description: 'Configure nome, endereço e informações do seu negócio' },
+    { icon: Users, title: 'Cadastre sua equipe', description: 'Adicione os profissionais que trabalham no salão' },
+    { icon: Scissors, title: 'Crie serviços e defina comissões', description: 'Configure preços, duração e comissões por serviço' },
+    { icon: DollarSign, title: 'Configure sua agenda', description: 'Defina horários de funcionamento e intervalos' },
+    { icon: CalendarCheck, title: 'Comece a agendar', description: 'Agende clientes e acompanhe seus resultados' },
   ];
 
   return (
