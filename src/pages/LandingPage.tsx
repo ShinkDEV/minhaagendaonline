@@ -266,7 +266,7 @@ export default function LandingPage() {
           <div className="grid lg:grid-cols-2 gap-12 items-center">
             <div className="text-center lg:text-left">
               <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight mb-6">
-                Sua agenda do salão organizada em minutos.
+                A agenda do seu salão organizada em minutos.
               </h1>
               <p className="text-lg text-muted-foreground mb-6 max-w-xl mx-auto lg:mx-0">
                 Gerencie agendamentos, comissões e financeiro do seu salão em um só lugar. Simples, rápido e no celular.
