@@ -53,6 +53,7 @@ function AppRoutes() {
     return (
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/site" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
@@ -67,6 +68,11 @@ function AppRoutes() {
   if (isSuperAdmin) {
     return (
       <Routes>
+        {/* Public routes */}
+        <Route path="/site" element={<LandingPage />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        
         <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/agenda" element={<Agenda />} />
@@ -93,6 +99,11 @@ function AppRoutes() {
   // Routes for salon users (admins and professionals)
   return (
     <Routes>
+      {/* Public routes */}
+      <Route path="/site" element={<LandingPage />} />
+      <Route path="/terms" element={<Terms />} />
+      <Route path="/privacy" element={<Privacy />} />
+      
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<Navigate to="/dashboard" replace />} />
       <Route path="/dashboard" element={<Dashboard />} />
