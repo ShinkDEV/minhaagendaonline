@@ -108,27 +108,43 @@ export default function LandingPage() {
 
   const plans = [
     {
-      name: 'Básico',
-      price: 'R$ 49',
+      name: 'Basic',
+      price: 'R$ 29',
       period: '/mês',
-      description: 'Para profissionais autônomos',
-      features: ['1 profissional', 'Agenda ilimitada', 'Cadastro de clientes', 'Controle financeiro básico'],
+      description: '1-2 profissionais',
+      features: ['Até 2 profissionais', 'Agendamentos ilimitados', 'Gestão de clientes', 'Relatórios básicos'],
       highlighted: false,
     },
     {
-      name: 'Profissional',
-      price: 'R$ 99',
+      name: 'Basic+',
+      price: 'R$ 49',
       period: '/mês',
-      description: 'Para salões pequenos',
-      features: ['Até 5 profissionais', 'Agenda ilimitada', 'Cadastro de clientes', 'Comissões automáticas', 'Relatórios completos'],
+      description: '3-5 profissionais',
+      features: ['Até 5 profissionais', 'Agendamentos ilimitados', 'Gestão de clientes', 'Relatórios completos', 'Comissões automáticas'],
       highlighted: true,
     },
     {
-      name: 'Empresarial',
-      price: 'R$ 199',
+      name: 'Pro',
+      price: 'R$ 79',
       period: '/mês',
-      description: 'Para salões maiores',
-      features: ['Profissionais ilimitados', 'Agenda ilimitada', 'Cadastro de clientes', 'Comissões automáticas', 'Relatórios avançados', 'Suporte prioritário'],
+      description: '6-10 profissionais',
+      features: ['Até 10 profissionais', 'Agendamentos ilimitados', 'Gestão de clientes', 'Relatórios avançados', 'Comissões automáticas', 'Suporte prioritário'],
+      highlighted: false,
+    },
+    {
+      name: 'Pro+',
+      price: 'R$ 99',
+      period: '/mês',
+      description: '11-20 profissionais',
+      features: ['Até 20 profissionais', 'Agendamentos ilimitados', 'Gestão de clientes', 'Relatórios avançados', 'Comissões automáticas', 'Suporte VIP', 'Múltiplas unidades'],
+      highlighted: false,
+    },
+    {
+      name: 'Super',
+      price: 'R$ 299',
+      period: '/mês',
+      description: '21+ profissionais',
+      features: ['Profissionais ilimitados', 'Agendamentos ilimitados', 'Gestão de clientes', 'Relatórios avançados', 'Comissões automáticas', 'Suporte VIP dedicado', 'Múltiplas unidades', 'API personalizada'],
       highlighted: false,
     },
   ];
@@ -599,7 +615,7 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 max-w-7xl mx-auto">
             {plans.map((plan, i) => (
               <Card 
                 key={i} 
