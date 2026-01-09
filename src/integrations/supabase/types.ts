@@ -952,6 +952,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_trial_link_usage: {
+        Args: { link_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "admin" | "professional" | "super_admin"

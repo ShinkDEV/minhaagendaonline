@@ -2,9 +2,23 @@ import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import Stripe from "https://esm.sh/stripe@18.5.0";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.57.2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+// Helper function to get CORS headers with origin validation
+const getCorsHeaders = (req: Request) => {
+  const origin = req.headers.get("origin") || "";
+  const allowedOrigins = [
+    Deno.env.get("ALLOWED_ORIGIN"),
+    "https://auzbynhwadrrgbtxdrbs.supabase.co",
+    "http://localhost:5173",
+    "http://localhost:8080",
+  ].filter(Boolean);
+  
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0] || "";
+  
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Credentials": "true",
+  };
 };
 
 const logStep = (step: string, details?: any) => {
@@ -13,6 +27,8 @@ const logStep = (step: string, details?: any) => {
 };
 
 serve(async (req) => {
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -66,7 +82,7 @@ serve(async (req) => {
     const errorMessage = error instanceof Error ? error.message : String(error);
     logStep("ERROR", { message: errorMessage });
     return new Response(JSON.stringify({ error: errorMessage }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: { ...getCorsHeaders(req), "Content-Type": "application/json" },
       status: 500,
     });
   }

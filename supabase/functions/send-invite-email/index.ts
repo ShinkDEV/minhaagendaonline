@@ -3,9 +3,23 @@ import { Resend } from "https://esm.sh/resend@2.0.0";
 
 const resend = new Resend(Deno.env.get("RESEND_API_KEY"));
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+// Helper function to get CORS headers with origin validation
+const getCorsHeaders = (req: Request) => {
+  const origin = req.headers.get("origin") || "";
+  const allowedOrigins = [
+    Deno.env.get("ALLOWED_ORIGIN"),
+    "https://auzbynhwadrrgbtxdrbs.supabase.co",
+    "http://localhost:5173",
+    "http://localhost:8080",
+  ].filter(Boolean);
+  
+  const allowedOrigin = allowedOrigins.includes(origin) ? origin : allowedOrigins[0] || "";
+  
+  return {
+    "Access-Control-Allow-Origin": allowedOrigin,
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+    "Access-Control-Allow-Credentials": "true",
+  };
 };
 
 interface InviteRequest {
@@ -16,6 +30,8 @@ interface InviteRequest {
 }
 
 const handler = async (req: Request): Promise<Response> => {
+  const corsHeaders = getCorsHeaders(req);
+  
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -93,7 +109,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error("Error sending invite email:", error);
     return new Response(
       JSON.stringify({ error: error.message }),
-      { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      { status: 500, headers: { "Content-Type": "application/json", ...getCorsHeaders(req) } }
     );
   }
 };
