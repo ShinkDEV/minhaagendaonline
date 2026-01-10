@@ -123,8 +123,10 @@ function AppRoutes() {
       <Route path="/invite/:token" element={<AcceptInvite />} />
       <Route path="/profile" element={<Profile />} />
       
+      {/* Shared routes - professionals can also create appointments */}
+      <Route path="/appointments/new" element={<NewAppointment />} />
+      
       {/* Admin-only routes */}
-      <Route path="/appointments/new" element={<AdminRoute><NewAppointment /></AdminRoute>} />
       <Route path="/clients" element={<AdminRoute><Clientes /></AdminRoute>} />
       <Route path="/clients/:id" element={<AdminRoute><ClientDetail /></AdminRoute>} />
       <Route path="/clientes" element={<Navigate to="/clients" replace />} />
