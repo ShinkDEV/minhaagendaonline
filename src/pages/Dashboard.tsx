@@ -15,6 +15,7 @@ import { RevenueChart } from '@/components/dashboard/RevenueChart';
 import { ProfessionalRankingCard } from '@/components/dashboard/ProfessionalRankingCard';
 import { ServiceRankingCard } from '@/components/dashboard/ServiceRankingCard';
 import { CancellationChart } from '@/components/dashboard/CancellationChart';
+import { ClientRankingCard } from '@/components/dashboard/ClientRankingCard';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Dashboard() {
@@ -216,9 +217,10 @@ export default function Dashboard() {
               <RevenueChart />
               <CancellationChart />
             </div>
-            <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-3 md:gap-4 lg:grid-cols-3">
               <ProfessionalRankingCard />
               <ServiceRankingCard />
+              <ClientRankingCard />
             </div>
           </div>
         )}
