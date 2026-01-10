@@ -1061,6 +1061,19 @@ export type Database = {
           status: string
         }[]
       }
+      get_professionals_with_email: {
+        Args: { p_salon_id: string }
+        Returns: {
+          active: boolean
+          commission_percent_default: number
+          created_at: string
+          display_name: string
+          id: string
+          profile_id: string
+          salon_id: string
+          user_email: string
+        }[]
+      }
       get_user_salon_id: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
