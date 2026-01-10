@@ -3,7 +3,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, XCircle, ChevronDown } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { format, addDays, addMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, isSameDay, isSameMonth, parseISO, getDay } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -129,6 +130,7 @@ function getBlocksForDate(
 export default function Agenda() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [selectedProfessional, setSelectedProfessional] = useState<string>('all');
+  const [showCancelled, setShowCancelled] = useState(false);
   const navigate = useNavigate();
   const { trialCancelled } = useAuth();
   
@@ -160,6 +162,12 @@ export default function Agenda() {
   const blocksForDate = useMemo(
     () => getBlocksForDate(timeBlocks, selectedDate, professionals, selectedProfessional),
     [timeBlocks, selectedDate, professionals, selectedProfessional]
+  );
+
+  // Cancelled appointments for the day
+  const cancelledAppointments = useMemo(
+    () => appointments.filter(a => a.status === 'cancelled'),
+    [appointments]
   );
 
   const getAppointmentPosition = (apt: Appointment) => {
@@ -318,6 +326,57 @@ export default function Agenda() {
             </div>
           </CardContent>
         </Card>
+
+        {/* Cancelled Appointments Section */}
+        {cancelledAppointments.length > 0 && (
+          <Collapsible open={showCancelled} onOpenChange={setShowCancelled}>
+            <Card className="border-0 shadow-sm">
+              <CollapsibleTrigger asChild>
+                <CardContent className="p-3 cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <XCircle className="h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        {cancelledAppointments.length} cancelamento{cancelledAppointments.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <ChevronDown className={cn(
+                      "h-4 w-4 text-muted-foreground transition-transform",
+                      showCancelled && "rotate-180"
+                    )} />
+                  </div>
+                </CardContent>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-3 pb-3 space-y-2">
+                  {cancelledAppointments.map((apt) => (
+                    <div
+                      key={apt.id}
+                      className="p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors"
+                      onClick={() => navigate(`/appointments/${apt.id}`)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium line-through text-muted-foreground">
+                            {apt.client?.full_name || 'Cliente não informado'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {apt.professional?.display_name} • {format(parseISO(apt.start_at), 'HH:mm')} - {format(parseISO(apt.end_at), 'HH:mm')}
+                          </p>
+                          {apt.cancelled_reason && (
+                            <p className="text-xs text-destructive/80">
+                              Motivo: {apt.cancelled_reason}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        )}
 
         {/* FAB */}
         {!trialCancelled && (
