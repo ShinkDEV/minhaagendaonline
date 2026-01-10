@@ -12,8 +12,12 @@ export function useClients(search?: string) {
       if (!salon?.id) return [];
       let query = supabase
         .from('clients')
-        .select('*')
+        .select(`
+          *,
+          appointments!appointments_client_id_fkey(count)
+        `)
         .eq('salon_id', salon.id)
+        .eq('appointments.status', 'completed')
         .order('full_name');
       
       if (search) {
@@ -22,7 +26,12 @@ export function useClients(search?: string) {
       
       const { data, error } = await query;
       if (error) throw error;
-      return data as Client[];
+      
+      // Transform data to include appointment_count
+      return (data || []).map(client => ({
+        ...client,
+        appointment_count: client.appointments?.[0]?.count || 0,
+      })) as (Client & { appointment_count: number })[];
     },
     enabled: !!salon?.id,
   });

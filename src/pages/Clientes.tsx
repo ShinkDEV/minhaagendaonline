@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
-import { Search, Plus, Phone, ChevronRight } from 'lucide-react';
+import { Search, Plus, ChevronRight, Calendar } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useClients, useCreateClient } from '@/hooks/useClients';
 import { useToast } from '@/hooks/use-toast';
@@ -92,9 +92,16 @@ export default function Clientes() {
                     </Avatar>
                     <div className="flex-1 min-w-0">
                       <div className="font-semibold text-foreground">{client.full_name}</div>
-                      {client.phone && (
-                        <div className="text-sm text-muted-foreground">{client.phone}</div>
-                      )}
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        {client.phone && <span>{client.phone}</span>}
+                        {client.phone && client.appointment_count > 0 && <span>•</span>}
+                        {client.appointment_count > 0 && (
+                          <span className="flex items-center gap-1">
+                            <Calendar className="h-3 w-3" />
+                            {client.appointment_count} atendimento{client.appointment_count > 1 ? 's' : ''}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <ChevronRight className="h-5 w-5 text-muted-foreground" />
                   </div>
