@@ -10,7 +10,7 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Switch } from '@/components/ui/switch';
-import { Building2, Users, LogOut, Save, Plus, UserCog, Percent, Scissors, Mail, Trash2, Gem, Crown } from 'lucide-react';
+import { Building2, Users, LogOut, Save, Plus, UserCog, Percent, Scissors, Mail, Trash2, Gem, Crown, KeyRound } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfessionals, useCreateProfessional, useUpdateProfessional, useDeleteProfessional } from '@/hooks/useProfessionals';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -41,6 +41,13 @@ export default function Settings() {
   const [profCommission, setProfCommission] = useState('40');
 
   const [deletingProfessional, setDeletingProfessional] = useState<Professional | null>(null);
+
+  // Password change
+  const [showChangePassword, setShowChangePassword] = useState(false);
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const { data: professionals = [] } = useProfessionals(true); // include inactive
   const createProfessional = useCreateProfessional();
@@ -160,6 +167,37 @@ export default function Settings() {
     navigate('/login');
   };
 
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast({ variant: 'destructive', title: 'Preencha todos os campos' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      toast({ variant: 'destructive', title: 'A senha deve ter no mínimo 6 caracteres' });
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      toast({ variant: 'destructive', title: 'As senhas não coincidem' });
+      return;
+    }
+
+    setChangingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password: newPassword });
+      if (error) throw error;
+      
+      toast({ title: 'Senha alterada com sucesso!' });
+      setShowChangePassword(false);
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
@@ -272,10 +310,20 @@ export default function Settings() {
                     </Badge>
                   </div>
                 </div>
-                <Button variant="destructive" className="w-full" onClick={handleSignOut}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Sair da conta
-                </Button>
+                <div className="space-y-2">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setShowChangePassword(true)}
+                  >
+                    <KeyRound className="h-4 w-4 mr-2" />
+                    Alterar senha
+                  </Button>
+                  <Button variant="destructive" className="w-full" onClick={handleSignOut}>
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sair da conta
+                  </Button>
+                </div>
 
                 {/* Mobile-only: Upgrade and Super Admin buttons */}
                 <div className="md:hidden space-y-2 pt-4 border-t border-border">
@@ -486,6 +534,43 @@ export default function Settings() {
         open={showInvite} 
         onClose={() => setShowInvite(false)} 
       />
+
+      {/* Change Password Sheet */}
+      <Sheet open={showChangePassword} onOpenChange={setShowChangePassword}>
+        <SheetContent side="bottom" className="h-auto">
+          <SheetHeader>
+            <SheetTitle>Alterar Senha</SheetTitle>
+          </SheetHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Nova senha *</Label>
+              <Input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                placeholder="Mínimo 6 caracteres"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Confirmar nova senha *</Label>
+              <Input
+                type="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Digite novamente"
+              />
+            </div>
+            <Button 
+              className="w-full" 
+              onClick={handleChangePassword}
+              disabled={changingPassword}
+            >
+              <KeyRound className="h-4 w-4 mr-2" />
+              {changingPassword ? 'Alterando...' : 'Alterar Senha'}
+            </Button>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingProfessional} onOpenChange={(open) => !open && setDeletingProfessional(null)}>
