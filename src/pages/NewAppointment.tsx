@@ -286,11 +286,12 @@ export default function NewAppointment() {
                       <SelectItem key={client.id} value={client.id}>
                         <div className="flex flex-col">
                           <span>{client.full_name}</span>
-                          {(client.email || client.phone) && (
-                            <span className="text-xs text-muted-foreground">
-                              {[client.email, client.phone].filter(Boolean).join(' • ')}
-                            </span>
-                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {[
+                              client.appointment_count > 0 ? `${client.appointment_count} atendimento${client.appointment_count > 1 ? 's' : ''}` : null,
+                              client.phone
+                            ].filter(Boolean).join(' • ')}
+                          </span>
                         </div>
                       </SelectItem>
                     ))}
