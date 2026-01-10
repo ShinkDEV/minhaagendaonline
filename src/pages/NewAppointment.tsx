@@ -22,12 +22,14 @@ import { useActiveServices } from '@/hooks/useServices';
 import { useCreateAppointment } from '@/hooks/useAppointments';
 import { useTimeBlocks, isTimeSlotBlocked } from '@/hooks/useTimeBlocks';
 import { useTrialBlock } from '@/hooks/useTrialBlock';
+import { useAuth } from '@/contexts/AuthContext';
 import { Service } from '@/types/database';
 
 export default function NewAppointment() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { trialCancelled, blockAction } = useTrialBlock();
+  const { isAdmin, professionalId: userProfessionalId } = useAuth();
 
   // Redirect if trial is cancelled
   useEffect(() => {
@@ -56,6 +58,18 @@ export default function NewAppointment() {
   const { data: timeBlocks = [] } = useTimeBlocks();
   const createAppointment = useCreateAppointment();
   const createClient = useCreateClient();
+
+  // For professionals (non-admin), filter to only show themselves
+  const availableProfessionals = isAdmin 
+    ? professionals 
+    : professionals.filter(p => p.id === userProfessionalId);
+
+  // Auto-select professional for non-admins
+  useEffect(() => {
+    if (!isAdmin && userProfessionalId && !professionalId) {
+      setProfessionalId(userProfessionalId);
+    }
+  }, [isAdmin, userProfessionalId, professionalId]);
 
   const selectedServiceObjects = services.filter(s => selectedServices.includes(s.id));
   const totalDuration = selectedServiceObjects.reduce((sum, s) => sum + s.duration_minutes, 0);
@@ -166,23 +180,29 @@ export default function NewAppointment() {
           <CardContent className="p-4 space-y-4">
             <div className="space-y-2">
               <Label>Profissional *</Label>
-              <Select value={professionalId} onValueChange={setProfessionalId}>
+              <Select 
+                value={professionalId} 
+                onValueChange={setProfessionalId}
+                disabled={!isAdmin && !!userProfessionalId}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Selecione" />
                 </SelectTrigger>
                 <SelectContent>
-                  <div className="p-2">
-                    <div className="relative">
-                      <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                      <Input
-                        placeholder="Buscar profissional..."
-                        value={professionalSearch}
-                        onChange={(e) => setProfessionalSearch(e.target.value)}
-                        className="pl-8 h-8"
-                      />
+                  {isAdmin && (
+                    <div className="p-2">
+                      <div className="relative">
+                        <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                        <Input
+                          placeholder="Buscar profissional..."
+                          value={professionalSearch}
+                          onChange={(e) => setProfessionalSearch(e.target.value)}
+                          className="pl-8 h-8"
+                        />
+                      </div>
                     </div>
-                  </div>
-                  {professionals
+                  )}
+                  {availableProfessionals
                     .filter(prof => 
                       prof.display_name.toLowerCase().includes(professionalSearch.toLowerCase())
                     )
@@ -191,7 +211,7 @@ export default function NewAppointment() {
                         {prof.display_name}
                       </SelectItem>
                     ))}
-                  {professionals.filter(p => 
+                  {availableProfessionals.filter(p => 
                     p.display_name.toLowerCase().includes(professionalSearch.toLowerCase())
                   ).length === 0 && (
                     <div className="py-2 px-3 text-sm text-muted-foreground text-center">
