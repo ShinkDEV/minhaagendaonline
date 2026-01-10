@@ -77,6 +77,7 @@ function AppRoutes() {
         <Route path="/site" element={<LandingPage />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         
         <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -109,6 +110,7 @@ function AppRoutes() {
       <Route path="/site" element={<LandingPage />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/privacy" element={<Privacy />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
       
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="/login" element={<Navigate to="/dashboard" replace />} />
