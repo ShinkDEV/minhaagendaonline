@@ -11,6 +11,7 @@ interface AuthContextType {
   userRole: UserRole | null;
   userRoles: UserRole[];
   salonPlan: (SalonPlan & { plan: Plan }) | null;
+  professionalId: string | null;
   loading: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [userRoles, setUserRoles] = useState<UserRole[]>([]);
   const [salonPlan, setSalonPlan] = useState<(SalonPlan & { plan: Plan }) | null>(null);
+  const [professionalId, setProfessionalId] = useState<string | null>(null);
   const [trialCancelled, setTrialCancelled] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -66,14 +68,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUserRole(rolesData?.[0] as UserRole || null);
 
       if (profileData?.salon_id) {
-        // Fetch salon and plan in parallel
-        const [salonResult, planResult] = await Promise.all([
+        // Fetch salon, plan, and professional id in parallel
+        const [salonResult, planResult, professionalResult] = await Promise.all([
           supabase.from('salons').select('*').eq('id', profileData.salon_id).maybeSingle(),
-          supabase.from('salon_plan').select('*, plan:plans(*)').eq('salon_id', profileData.salon_id).maybeSingle()
+          supabase.from('salon_plan').select('*, plan:plans(*)').eq('salon_id', profileData.salon_id).maybeSingle(),
+          supabase.from('professionals').select('id').eq('profile_id', userId).maybeSingle()
         ]);
 
         setSalon(salonResult.data);
         setSalonPlan(planResult.data as (SalonPlan & { plan: Plan }) | null);
+        setProfessionalId(professionalResult.data?.id || null);
       }
 
       // Check subscription/trial status
@@ -110,6 +114,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setSalon(null);
           setUserRole(null);
           setSalonPlan(null);
+          setProfessionalId(null);
           setTrialCancelled(false);
         }
         
@@ -156,6 +161,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUserRole(null);
     setUserRoles([]);
     setSalonPlan(null);
+    setProfessionalId(null);
     setTrialCancelled(false);
   };
 
@@ -165,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ 
-      user, session, profile, salon, userRole, userRoles, salonPlan, loading, isAdmin, isSuperAdmin, trialCancelled,
+      user, session, profile, salon, userRole, userRoles, salonPlan, professionalId, loading, isAdmin, isSuperAdmin, trialCancelled,
       signIn, signUp, signOut, refreshProfile 
     }}>
       {children}
