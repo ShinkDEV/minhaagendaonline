@@ -3,13 +3,33 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Professional } from '@/types/database';
 
+export interface ProfessionalWithEmail extends Professional {
+  user_email: string | null;
+}
+
 export function useProfessionals(includeInactive = false) {
-  const { salon } = useAuth();
+  const { salon, isAdmin } = useAuth();
 
   return useQuery({
-    queryKey: ['professionals', salon?.id, includeInactive],
+    queryKey: ['professionals', salon?.id, includeInactive, isAdmin],
     queryFn: async () => {
       if (!salon?.id) return [];
+      
+      // For admins, use the RPC function that includes email
+      if (isAdmin) {
+        const { data, error } = await supabase
+          .rpc('get_professionals_with_email', { p_salon_id: salon.id });
+        
+        if (error) throw error;
+        
+        let result = data as ProfessionalWithEmail[];
+        if (!includeInactive) {
+          result = result.filter(p => p.active);
+        }
+        return result;
+      }
+      
+      // For non-admins, use regular query
       let query = supabase
         .from('professionals')
         .select('*')
@@ -22,7 +42,7 @@ export function useProfessionals(includeInactive = false) {
       
       const { data, error } = await query;
       if (error) throw error;
-      return data as Professional[];
+      return (data as Professional[]).map(p => ({ ...p, user_email: null })) as ProfessionalWithEmail[];
     },
     enabled: !!salon?.id,
   });

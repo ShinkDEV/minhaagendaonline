@@ -345,13 +345,19 @@ export default function Settings() {
                             {getInitials(prof.display_name)}
                           </AvatarFallback>
                         </Avatar>
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-semibold">{prof.display_name}</span>
                             {!prof.active && (
                               <Badge variant="secondary" className="text-xs">Inativo</Badge>
                             )}
                           </div>
+                          {isAdmin && prof.user_email && (
+                            <div className="text-sm text-muted-foreground flex items-center gap-1 truncate">
+                              <Mail className="h-3 w-3 flex-shrink-0" />
+                              <span className="truncate">{prof.user_email}</span>
+                            </div>
+                          )}
                           <div className="text-sm text-muted-foreground flex items-center gap-1">
                             <Percent className="h-3 w-3" />
                             Comissão: {prof.commission_percent_default}%
