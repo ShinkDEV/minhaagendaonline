@@ -22,7 +22,7 @@ import { ProfessionalCommissions } from '@/components/ProfessionalCommissions';
 import { InviteProfessional } from '@/components/InviteProfessional';
 
 export default function Settings() {
-  const { salon, profile, salonPlan, isAdmin, isSuperAdmin, signOut, refreshProfile } = useAuth();
+  const { salon, profile, user, salonPlan, isAdmin, isSuperAdmin, signOut, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   
@@ -262,9 +262,12 @@ export default function Settings() {
                       {getInitials(profile?.full_name || 'U')}
                     </AvatarFallback>
                   </Avatar>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <div className="font-semibold">{profile?.full_name}</div>
-                    <Badge variant="outline">
+                    {user?.email && (
+                      <div className="text-sm text-muted-foreground truncate">{user.email}</div>
+                    )}
+                    <Badge variant="outline" className="mt-1">
                       {isAdmin ? 'Dono do Salão' : 'Profissional'}
                     </Badge>
                   </div>
