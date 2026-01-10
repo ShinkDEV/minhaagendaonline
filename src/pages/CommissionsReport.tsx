@@ -27,7 +27,7 @@ export default function CommissionsReport() {
   const [confirmPayDialog, setConfirmPayDialog] = useState<Commission | null>(null);
 
   const { data: professionals = [] } = useProfessionals();
-  const { data: commissions = [], isLoading } = useCommissions(tab as 'pending' | 'paid');
+  const { data: commissions = [], isLoading } = useCommissions();
   const payCommission = usePayCommission();
 
   // Calculate date range based on month and period filter
@@ -43,10 +43,11 @@ export default function CommissionsReport() {
     return { start: monthStart, end: monthEnd };
   }, [selectedMonth, periodFilter]);
 
-  // Filter by professional and date range
+  // Filter by professional, date range, and status (for tab)
   const filteredCommissions = useMemo(() => {
     return commissions.filter(c => {
       const matchesProfessional = selectedProfessional === 'all' || c.professional_id === selectedProfessional;
+      const matchesStatus = c.status === tab;
       
       // Filter by date based on the appointment date
       const appointmentDate = c.appointment?.start_at ? new Date(c.appointment.start_at) : null;
@@ -54,22 +55,34 @@ export default function CommissionsReport() {
         ? isWithinInterval(appointmentDate, { start: dateRange.start, end: dateRange.end })
         : false;
       
+      return matchesProfessional && matchesDate && matchesStatus;
+    });
+  }, [commissions, selectedProfessional, dateRange, tab]);
+
+  // All commissions within date range (for summary calculations)
+  const commissionsInDateRange = useMemo(() => {
+    return commissions.filter(c => {
+      const matchesProfessional = selectedProfessional === 'all' || c.professional_id === selectedProfessional;
+      const appointmentDate = c.appointment?.start_at ? new Date(c.appointment.start_at) : null;
+      const matchesDate = appointmentDate 
+        ? isWithinInterval(appointmentDate, { start: dateRange.start, end: dateRange.end })
+        : false;
       return matchesProfessional && matchesDate;
     });
   }, [commissions, selectedProfessional, dateRange]);
 
-  // Group by professional for summary (using filtered data)
+  // Group by professional for summary (using all commissions in date range, not filtered by tab)
   const professionalSummary = useMemo(() => {
     return professionals.filter(p => p.active).map(prof => {
-      const profCommissions = filteredCommissions.filter(c => c.professional_id === prof.id);
+      const profCommissions = commissionsInDateRange.filter(c => c.professional_id === prof.id);
       const pending = profCommissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.amount), 0);
       const paid = profCommissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + Number(c.amount), 0);
       return { ...prof, pending, paid, total: pending + paid };
     }).sort((a, b) => b.pending - a.pending);
-  }, [professionals, filteredCommissions]);
+  }, [professionals, commissionsInDateRange]);
 
-  const totalPending = filteredCommissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.amount), 0);
-  const totalPaid = filteredCommissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + Number(c.amount), 0);
+  const totalPending = commissionsInDateRange.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.amount), 0);
+  const totalPaid = commissionsInDateRange.filter(c => c.status === 'paid').reduce((sum, c) => sum + Number(c.amount), 0);
 
   const handlePayCommission = async (commission: Commission) => {
     try {
