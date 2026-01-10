@@ -10,13 +10,14 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Clock, User, Scissors, DollarSign, Phone, CheckCircle, XCircle, Package } from 'lucide-react';
+import { ArrowLeft, Clock, User, Scissors, DollarSign, Phone, CheckCircle, XCircle, Package, History } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
 import { useAppointment, useUpdateAppointmentStatus } from '@/hooks/useAppointments';
 import { useCompleteAppointment } from '@/hooks/useCommissions';
 import { useServiceCommissions } from '@/hooks/useServiceCommissions';
+import { useAppointmentLogs, formatLogAction } from '@/hooks/useAppointmentLogs';
 import { PaymentMethod } from '@/types/database';
 import { ProductSelector, SelectedProduct } from '@/components/ProductSelector';
 
@@ -46,6 +47,7 @@ export default function AppointmentDetail() {
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
 
   const { data: appointment, isLoading } = useAppointment(id);
+  const { data: logs = [] } = useAppointmentLogs(id);
   const updateStatus = useUpdateAppointmentStatus();
   const completeAppointment = useCompleteAppointment();
   const { data: serviceCommissions = [] } = useServiceCommissions(appointment?.professional_id);
@@ -268,7 +270,41 @@ export default function AppointmentDetail() {
           </Card>
         )}
 
-        {/* Actions */}
+        {/* Activity Log */}
+        {logs.length > 0 && (
+          <Card className="border-0 shadow-sm">
+            <CardContent className="p-4">
+              <h3 className="font-semibold mb-3 flex items-center gap-2">
+                <History className="h-4 w-4" />
+                Histórico de Alterações
+              </h3>
+              <div className="space-y-3">
+                {logs.map((log) => (
+                  <div key={log.id} className="flex items-start gap-3 text-sm">
+                    <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-wrap items-baseline gap-1">
+                        <span className="font-medium">{log.user_name}</span>
+                        <span className="text-muted-foreground">{formatLogAction(log.action)}</span>
+                      </div>
+                      {log.changes?.cancelled_reason && (
+                        <p className="text-muted-foreground text-xs mt-0.5">
+                          Motivo: {log.changes.cancelled_reason}
+                        </p>
+                      )}
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {format(new Date(log.created_at), "dd/MM/yyyy 'às' HH:mm", { locale: ptBR })}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {appointment.status === 'confirmed' && (
           <div className="flex gap-3">
             <Button 

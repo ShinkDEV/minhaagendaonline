@@ -153,6 +153,23 @@ export function useCreateAppointment() {
         if (servicesError) throw servicesError;
       }
 
+      // Create log entry for creation
+      await supabase
+        .from('appointment_logs')
+        .insert({
+          appointment_id: appointment.id,
+          user_id: user.id,
+          action: 'created',
+          changes: {
+            professional_id: data.professional_id,
+            client_id: data.client_id,
+            start_at: data.start_at,
+            end_at: data.end_at,
+            total_amount: data.total_amount,
+            services: data.services.map(s => s.service_id),
+          },
+        });
+
       return appointment;
     },
     onSuccess: () => {
@@ -163,14 +180,31 @@ export function useCreateAppointment() {
 
 export function useUpdateAppointmentStatus() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({ id, status, cancelled_reason }: { id: string; status: AppointmentStatus; cancelled_reason?: string }) => {
+      if (!user?.id) throw new Error('No user');
+
       const { error } = await supabase
         .from('appointments')
         .update({ status, cancelled_reason })
         .eq('id', id);
       if (error) throw error;
+
+      // Create log entry for status change
+      const action = status === 'cancelled' ? 'cancelled' : 'status_changed';
+      await supabase
+        .from('appointment_logs')
+        .insert({
+          appointment_id: id,
+          user_id: user.id,
+          action,
+          changes: {
+            new_status: status,
+            ...(cancelled_reason && { cancelled_reason }),
+          },
+        });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });

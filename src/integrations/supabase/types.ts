@@ -73,6 +73,41 @@ export type Database = {
         }
         Relationships: []
       }
+      appointment_logs: {
+        Row: {
+          action: string
+          appointment_id: string
+          changes: Json | null
+          created_at: string
+          id: string
+          user_id: string
+        }
+        Insert: {
+          action: string
+          appointment_id: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          user_id: string
+        }
+        Update: {
+          action?: string
+          appointment_id?: string
+          changes?: Json | null
+          created_at?: string
+          id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "appointment_logs_appointment_id_fkey"
+            columns: ["appointment_id"]
+            isOneToOne: false
+            referencedRelation: "appointments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       appointment_services: {
         Row: {
           appointment_id: string

@@ -142,6 +142,23 @@ export function useCompleteAppointment() {
           if (movementError) throw movementError;
         }
       }
+
+      // Create log entry for completion
+      if (user?.id) {
+        await supabase
+          .from('appointment_logs')
+          .insert({
+            appointment_id: appointmentId,
+            user_id: user.id,
+            action: 'completed',
+            changes: {
+              payment_method: paymentMethod,
+              total_amount: totalAmount,
+              commission_amount: commissionAmount,
+              products_sold: productSales.length > 0 ? productSales.map(p => p.name) : undefined,
+            },
+          });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['appointments'] });
