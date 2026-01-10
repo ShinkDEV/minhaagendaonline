@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,41 +6,70 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { DollarSign, Calendar, User, CheckCircle, TrendingUp, Users } from 'lucide-react';
+import { DollarSign, Calendar, User, CheckCircle, TrendingUp, Users, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useCommissions, usePayCommission } from '@/hooks/useCommissions';
 import { useToast } from '@/hooks/use-toast';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { format, startOfMonth, endOfMonth, subMonths, addMonths, isWithinInterval, setDate } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Commission } from '@/types/database';
+
+type PeriodFilter = 'full' | 'first' | 'second';
 
 export default function CommissionsReport() {
   const { isAdmin } = useAuth();
   const { toast } = useToast();
   const [tab, setTab] = useState('pending');
   const [selectedProfessional, setSelectedProfessional] = useState<string>('all');
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('full');
   const [confirmPayDialog, setConfirmPayDialog] = useState<Commission | null>(null);
 
   const { data: professionals = [] } = useProfessionals();
   const { data: commissions = [], isLoading } = useCommissions(tab as 'pending' | 'paid');
   const payCommission = usePayCommission();
 
-  // Filter by professional
-  const filteredCommissions = commissions.filter(c => 
-    selectedProfessional === 'all' || c.professional_id === selectedProfessional
-  );
+  // Calculate date range based on month and period filter
+  const dateRange = useMemo(() => {
+    const monthStart = startOfMonth(selectedMonth);
+    const monthEnd = endOfMonth(selectedMonth);
+    
+    if (periodFilter === 'first') {
+      return { start: monthStart, end: setDate(selectedMonth, 15) };
+    } else if (periodFilter === 'second') {
+      return { start: setDate(selectedMonth, 16), end: monthEnd };
+    }
+    return { start: monthStart, end: monthEnd };
+  }, [selectedMonth, periodFilter]);
 
-  // Group by professional for summary
-  const professionalSummary = professionals.filter(p => p.active).map(prof => {
-    const profCommissions = commissions.filter(c => c.professional_id === prof.id);
-    const pending = profCommissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.amount), 0);
-    const paid = profCommissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + Number(c.amount), 0);
-    return { ...prof, pending, paid, total: pending + paid };
-  }).sort((a, b) => b.pending - a.pending);
+  // Filter by professional and date range
+  const filteredCommissions = useMemo(() => {
+    return commissions.filter(c => {
+      const matchesProfessional = selectedProfessional === 'all' || c.professional_id === selectedProfessional;
+      
+      // Filter by date based on the appointment date
+      const appointmentDate = c.appointment?.start_at ? new Date(c.appointment.start_at) : null;
+      const matchesDate = appointmentDate 
+        ? isWithinInterval(appointmentDate, { start: dateRange.start, end: dateRange.end })
+        : false;
+      
+      return matchesProfessional && matchesDate;
+    });
+  }, [commissions, selectedProfessional, dateRange]);
 
-  const totalPending = commissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.amount), 0);
-  const totalPaid = commissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + Number(c.amount), 0);
+  // Group by professional for summary (using filtered data)
+  const professionalSummary = useMemo(() => {
+    return professionals.filter(p => p.active).map(prof => {
+      const profCommissions = filteredCommissions.filter(c => c.professional_id === prof.id);
+      const pending = profCommissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.amount), 0);
+      const paid = profCommissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + Number(c.amount), 0);
+      return { ...prof, pending, paid, total: pending + paid };
+    }).sort((a, b) => b.pending - a.pending);
+  }, [professionals, filteredCommissions]);
+
+  const totalPending = filteredCommissions.filter(c => c.status === 'pending').reduce((sum, c) => sum + Number(c.amount), 0);
+  const totalPaid = filteredCommissions.filter(c => c.status === 'paid').reduce((sum, c) => sum + Number(c.amount), 0);
 
   const handlePayCommission = async (commission: Commission) => {
     try {
@@ -56,9 +85,67 @@ export default function CommissionsReport() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const handlePreviousMonth = () => setSelectedMonth(prev => subMonths(prev, 1));
+  const handleNextMonth = () => setSelectedMonth(prev => addMonths(prev, 1));
+
+  const getPeriodLabel = () => {
+    const monthName = format(selectedMonth, 'MMMM yyyy', { locale: ptBR });
+    if (periodFilter === 'first') return `1ª Quinzena de ${monthName}`;
+    if (periodFilter === 'second') return `2ª Quinzena de ${monthName}`;
+    return monthName.charAt(0).toUpperCase() + monthName.slice(1);
+  };
+
   return (
     <AppLayout title="Relatório de Comissões">
       <div className="space-y-4">
+        {/* Month Navigation */}
+        <Card className="border-0 shadow-sm">
+          <CardContent className="p-3">
+            <div className="flex items-center justify-between">
+              <Button variant="ghost" size="icon" onClick={handlePreviousMonth}>
+                <ChevronLeft className="h-5 w-5" />
+              </Button>
+              <div className="text-center">
+                <p className="font-semibold">{getPeriodLabel()}</p>
+                <p className="text-xs text-muted-foreground">
+                  {format(dateRange.start, 'dd/MM')} - {format(dateRange.end, 'dd/MM/yyyy')}
+                </p>
+              </div>
+              <Button variant="ghost" size="icon" onClick={handleNextMonth}>
+                <ChevronRight className="h-5 w-5" />
+              </Button>
+            </div>
+            
+            {/* Period Filter */}
+            <div className="flex gap-1 mt-3">
+              <Button 
+                variant={periodFilter === 'full' ? 'default' : 'outline'} 
+                size="sm" 
+                className="flex-1"
+                onClick={() => setPeriodFilter('full')}
+              >
+                Mês Inteiro
+              </Button>
+              <Button 
+                variant={periodFilter === 'first' ? 'default' : 'outline'} 
+                size="sm" 
+                className="flex-1"
+                onClick={() => setPeriodFilter('first')}
+              >
+                1ª Quinzena
+              </Button>
+              <Button 
+                variant={periodFilter === 'second' ? 'default' : 'outline'} 
+                size="sm" 
+                className="flex-1"
+                onClick={() => setPeriodFilter('second')}
+              >
+                2ª Quinzena
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Summary Cards */}
         <div className="grid grid-cols-2 gap-3">
           <Card className="border-0 shadow-sm">
