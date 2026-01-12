@@ -21,7 +21,6 @@ import Reports from "./pages/Reports";
 import Settings from "./pages/Settings";
 import SuperAdmin from "./pages/SuperAdmin";
 import MyCommissions from "./pages/MyCommissions";
-import CommissionsReport from "./pages/CommissionsReport";
 import AcceptInvite from "./pages/AcceptInvite";
 import Profile from "./pages/Profile";
 import Upgrade from "./pages/Upgrade";
@@ -95,7 +94,7 @@ function AppRoutes() {
         <Route path="/financial" element={<Financeiro />} />
         <Route path="/stock" element={<Estoque />} />
         <Route path="/reports" element={<Reports />} />
-        <Route path="/commissions" element={<CommissionsReport />} />
+        <Route path="/commissions" element={<Navigate to="/financial" replace />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/upgrade" element={<Upgrade />} />
         <Route path="/my-commissions" element={<MyCommissions />} />
@@ -142,7 +141,7 @@ function AppRoutes() {
         <Route path="/financial" element={<AdminRoute><Financeiro /></AdminRoute>} />
         <Route path="/stock" element={<AdminRoute><Estoque /></AdminRoute>} />
         <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
-        <Route path="/commissions" element={<AdminRoute><CommissionsReport /></AdminRoute>} />
+        <Route path="/commissions" element={<Navigate to="/financial" replace />} />
         <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
         <Route path="/upgrade" element={<Upgrade />} />
         
