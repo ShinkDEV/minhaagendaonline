@@ -51,6 +51,7 @@ import {
   Trash2,
   ArrowUpCircle,
   ArrowDownCircle,
+  Truck,
 } from "lucide-react";
 import {
   useProducts,
@@ -62,6 +63,8 @@ import {
   useCreateProductMovement,
   Product,
 } from "@/hooks/useProducts";
+import { useActiveSuppliers } from "@/hooks/useSuppliers";
+import { SupplierManager } from "@/components/SupplierManager";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 
@@ -82,6 +85,7 @@ export default function Estoque() {
   const [quantity, setQuantity] = useState("");
   const [minQuantity, setMinQuantity] = useState("5");
   const [category, setCategory] = useState("");
+  const [supplierId, setSupplierId] = useState("");
   const [active, setActive] = useState(true);
 
   // Movement form states
@@ -93,6 +97,7 @@ export default function Estoque() {
   const { data: products = [], isLoading } = useProducts();
   const { data: lowStockProducts = [] } = useLowStockProducts();
   const { data: movements = [] } = useProductMovements();
+  const { data: suppliers = [] } = useActiveSuppliers();
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
   const deleteProduct = useDeleteProduct();
@@ -117,6 +122,7 @@ export default function Estoque() {
     setQuantity("");
     setMinQuantity("5");
     setCategory("");
+    setSupplierId("");
     setActive(true);
     setEditingProduct(null);
   };
@@ -131,6 +137,7 @@ export default function Estoque() {
     setQuantity(product.quantity.toString());
     setMinQuantity(product.min_quantity?.toString() || "5");
     setCategory(product.category || "");
+    setSupplierId((product as any).supplier_id || "");
     setActive(product.active);
     setShowProductSheet(true);
   };
@@ -147,6 +154,7 @@ export default function Estoque() {
       quantity: parseInt(quantity) || 0,
       min_quantity: parseInt(minQuantity) || 5,
       category: category || null,
+      supplier_id: supplierId || null,
       active,
     };
 
@@ -294,6 +302,10 @@ export default function Estoque() {
             <TabsList>
               <TabsTrigger value="products">Produtos</TabsTrigger>
               <TabsTrigger value="movements">Movimentações</TabsTrigger>
+              <TabsTrigger value="suppliers" className="gap-1">
+                <Truck className="h-4 w-4" />
+                <span className="hidden sm:inline">Fornecedores</span>
+              </TabsTrigger>
             </TabsList>
 
             <div className="flex gap-2">
@@ -405,6 +417,24 @@ export default function Estoque() {
                         />
                       </div>
                     </div>
+                    {suppliers.length > 0 && (
+                      <div>
+                        <Label>Fornecedor</Label>
+                        <Select value={supplierId} onValueChange={setSupplierId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Selecione um fornecedor" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="">Nenhum</SelectItem>
+                            {suppliers.map((s) => (
+                              <SelectItem key={s.id} value={s.id}>
+                                {s.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
                     <div className="flex items-center justify-between">
                       <Label>Produto Ativo</Label>
                       <Switch checked={active} onCheckedChange={setActive} />
@@ -573,6 +603,10 @@ export default function Estoque() {
                 )}
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="suppliers">
+            <SupplierManager />
           </TabsContent>
         </Tabs>
 
