@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { CrispChat } from "@/components/CrispChat";
+
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Agenda from "./pages/Agenda";
@@ -31,6 +31,7 @@ import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import ResetPassword from "./pages/ResetPassword";
+import ReportError from "./pages/ReportError";
 
 const queryClient = new QueryClient();
 
@@ -99,6 +100,7 @@ function AppRoutes() {
         <Route path="/my-commissions" element={<MyCommissions />} />
         <Route path="/invite/:token" element={<AcceptInvite />} />
         <Route path="/profile" element={<Profile />} />
+        <Route path="/report-error" element={<ReportError />} />
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Navigate to="/dashboard" replace />} />
         <Route path="*" element={<NotFound />} />
@@ -142,6 +144,7 @@ function AppRoutes() {
       <Route path="/commissions" element={<AdminRoute><CommissionsReport /></AdminRoute>} />
       <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
       <Route path="/upgrade" element={<AdminRoute><Upgrade /></AdminRoute>} />
+      <Route path="/report-error" element={<ReportError />} />
       
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -152,7 +155,6 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
-        <CrispChat />
         <Toaster />
         <Sonner />
         <BrowserRouter>
