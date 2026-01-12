@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 
 // Declare Crisp on window
 declare global {
@@ -8,12 +9,8 @@ declare global {
   }
 }
 
-interface CrispChatProps {
-  websiteId: string;
-}
-
 export function initCrisp(websiteId: string) {
-  if (typeof window !== 'undefined' && !window.$crisp) {
+  if (typeof window !== 'undefined' && !window.$crisp && websiteId) {
     window.$crisp = [];
     window.CRISP_WEBSITE_ID = websiteId;
 
@@ -30,10 +27,32 @@ export function openCrispChat() {
   }
 }
 
-export function CrispChat({ websiteId }: CrispChatProps) {
+export function CrispChat() {
+  const [initialized, setInitialized] = useState(false);
+
   useEffect(() => {
-    initCrisp(websiteId);
-  }, [websiteId]);
+    if (initialized) return;
+
+    const loadCrispConfig = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('get-crisp-config');
+        
+        if (error) {
+          console.error('Error loading Crisp config:', error);
+          return;
+        }
+
+        if (data?.websiteId) {
+          initCrisp(data.websiteId);
+          setInitialized(true);
+        }
+      } catch (err) {
+        console.error('Error initializing Crisp:', err);
+      }
+    };
+
+    loadCrispConfig();
+  }, [initialized]);
 
   return null;
 }

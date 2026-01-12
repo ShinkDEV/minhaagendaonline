@@ -34,9 +34,6 @@ import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
-// TODO: Substitua pelo seu Website ID do Crisp
-const CRISP_WEBSITE_ID = "SEU_CRISP_WEBSITE_ID";
-
 // Component to protect admin-only routes
 function AdminRoute({ children }: { children: React.ReactNode }) {
   const { isAdmin } = useAuth();
@@ -155,7 +152,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
-        <CrispChat websiteId={CRISP_WEBSITE_ID} />
+        <CrispChat />
         <Toaster />
         <Sonner />
         <BrowserRouter>
