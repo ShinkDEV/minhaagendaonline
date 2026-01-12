@@ -420,34 +420,46 @@ export type Database = {
       }
       commissions: {
         Row: {
+          admin_fee_amount: number | null
           amount: number
           appointment_id: string
           calculated_at: string
+          card_fee_amount: number | null
           created_at: string
+          gross_amount: number | null
           id: string
           paid_at: string | null
+          payment_method: string | null
           professional_id: string
           salon_id: string
           status: string
         }
         Insert: {
+          admin_fee_amount?: number | null
           amount: number
           appointment_id: string
           calculated_at?: string
+          card_fee_amount?: number | null
           created_at?: string
+          gross_amount?: number | null
           id?: string
           paid_at?: string | null
+          payment_method?: string | null
           professional_id: string
           salon_id: string
           status?: string
         }
         Update: {
+          admin_fee_amount?: number | null
           amount?: number
           appointment_id?: string
           calculated_at?: string
+          card_fee_amount?: number | null
           created_at?: string
+          gross_amount?: number | null
           id?: string
           paid_at?: string | null
+          payment_method?: string | null
           professional_id?: string
           salon_id?: string
           status?: string
@@ -958,6 +970,8 @@ export type Database = {
       salons: {
         Row: {
           address: string | null
+          admin_fee_percent: number
+          card_fee_percent: number
           created_at: string
           id: string
           name: string
@@ -966,6 +980,8 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          admin_fee_percent?: number
+          card_fee_percent?: number
           created_at?: string
           id?: string
           name: string
@@ -974,6 +990,8 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          admin_fee_percent?: number
+          card_fee_percent?: number
           created_at?: string
           id?: string
           name?: string

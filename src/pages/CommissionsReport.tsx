@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { DollarSign, Calendar, User, CheckCircle, TrendingUp, Users, ChevronLeft, ChevronRight } from 'lucide-react';
+import { DollarSign, Calendar, User, CheckCircle, TrendingUp, Users, ChevronLeft, ChevronRight, FileText, CreditCard, Percent } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfessionals } from '@/hooks/useProfessionals';
 import { useCommissions, usePayCommission } from '@/hooks/useCommissions';
@@ -14,17 +14,19 @@ import { useToast } from '@/hooks/use-toast';
 import { format, startOfMonth, endOfMonth, subMonths, addMonths, isWithinInterval, setDate } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Commission } from '@/types/database';
+import { CommissionReceipt } from '@/components/CommissionReceipt';
 
 type PeriodFilter = 'full' | 'first' | 'second';
 
 export default function CommissionsReport() {
-  const { isAdmin } = useAuth();
+  const { isAdmin, salon } = useAuth();
   const { toast } = useToast();
   const [tab, setTab] = useState('pending');
   const [selectedProfessional, setSelectedProfessional] = useState<string>('all');
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
   const [periodFilter, setPeriodFilter] = useState<PeriodFilter>('full');
   const [confirmPayDialog, setConfirmPayDialog] = useState<Commission | null>(null);
+  const [receiptCommission, setReceiptCommission] = useState<Commission | null>(null);
 
   const { data: professionals = [] } = useProfessionals();
   const { data: commissions = [], isLoading } = useCommissions();
@@ -259,49 +261,86 @@ export default function CommissionsReport() {
               </div>
             ) : (
               <div className="space-y-3">
-                {filteredCommissions.map((commission) => (
-                  <Card key={commission.id} className="border-0 shadow-sm">
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="space-y-1 flex-1">
-                          <div className="flex items-center gap-2">
-                            <User className="h-4 w-4 text-muted-foreground" />
-                            <span className="font-medium">
-                              {commission.professional?.display_name}
-                            </span>
+                {filteredCommissions.map((commission) => {
+                  const hasDeductions = (commission.card_fee_amount || 0) > 0 || (commission.admin_fee_amount || 0) > 0;
+                  
+                  return (
+                    <Card key={commission.id} className="border-0 shadow-sm">
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between">
+                          <div className="space-y-1 flex-1">
+                            <div className="flex items-center gap-2">
+                              <User className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium">
+                                {commission.professional?.display_name}
+                              </span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">
+                              Cliente: {commission.appointment?.client?.full_name || 'Não informado'}
+                            </p>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <Calendar className="h-3 w-3" />
+                              {commission.appointment?.start_at && 
+                                format(new Date(commission.appointment.start_at), "dd MMM yyyy 'às' HH:mm", { locale: ptBR })
+                              }
+                            </div>
+                            
+                            {/* Fee deductions */}
+                            {hasDeductions && (
+                              <div className="flex items-center gap-2 mt-1 text-xs">
+                                {(commission.card_fee_amount || 0) > 0 && (
+                                  <span className="flex items-center gap-1 text-destructive">
+                                    <CreditCard className="h-3 w-3" />
+                                    -R$ {Number(commission.card_fee_amount).toFixed(2)}
+                                  </span>
+                                )}
+                                {(commission.admin_fee_amount || 0) > 0 && (
+                                  <span className="flex items-center gap-1 text-destructive">
+                                    <Percent className="h-3 w-3" />
+                                    -R$ {Number(commission.admin_fee_amount).toFixed(2)}
+                                  </span>
+                                )}
+                              </div>
+                            )}
                           </div>
-                          <p className="text-sm text-muted-foreground">
-                            Cliente: {commission.appointment?.client?.full_name || 'Não informado'}
-                          </p>
-                          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                            <Calendar className="h-3 w-3" />
-                            {commission.appointment?.start_at && 
-                              format(new Date(commission.appointment.start_at), "dd MMM yyyy 'às' HH:mm", { locale: ptBR })
-                            }
+                          <div className="text-right space-y-2">
+                            {hasDeductions && commission.gross_amount && (
+                              <p className="text-xs text-muted-foreground line-through">
+                                R$ {Number(commission.gross_amount).toFixed(2)}
+                              </p>
+                            )}
+                            <p className="text-lg font-bold text-primary">
+                              R$ {Number(commission.amount).toFixed(2)}
+                            </p>
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                size="sm" 
+                                variant="ghost"
+                                onClick={() => setReceiptCommission(commission)}
+                                title="Ver recibo"
+                              >
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                              {commission.status === 'pending' && isAdmin ? (
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => setConfirmPayDialog(commission)}
+                                >
+                                  <CheckCircle className="h-4 w-4 mr-1" />
+                                  Pagar
+                                </Button>
+                              ) : (
+                                <Badge variant={commission.status === 'pending' ? 'secondary' : 'default'}>
+                                  {commission.status === 'pending' ? 'Pendente' : 'Paga'}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
-                        <div className="text-right space-y-2">
-                          <p className="text-lg font-bold text-primary">
-                            R$ {Number(commission.amount).toFixed(2)}
-                          </p>
-                          {commission.status === 'pending' && isAdmin ? (
-                            <Button 
-                              size="sm" 
-                              onClick={() => setConfirmPayDialog(commission)}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Pagar
-                            </Button>
-                          ) : (
-                            <Badge variant={commission.status === 'pending' ? 'secondary' : 'default'}>
-                              {commission.status === 'pending' ? 'Pendente' : 'Paga'}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             )}
           </TabsContent>
@@ -341,6 +380,13 @@ export default function CommissionsReport() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+        {/* Commission Receipt */}
+        <CommissionReceipt
+          commission={receiptCommission}
+          salonName={salon?.name || 'Salão'}
+          open={!!receiptCommission}
+          onClose={() => setReceiptCommission(null)}
+        />
       </div>
     </AppLayout>
   );

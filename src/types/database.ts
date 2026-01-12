@@ -11,6 +11,8 @@ export interface Salon {
   phone: string | null;
   address: string | null;
   timezone: string;
+  card_fee_percent: number;
+  admin_fee_percent: number;
   created_at: string;
 }
 
@@ -148,6 +150,10 @@ export interface Commission {
   appointment_id: string;
   professional_id: string;
   amount: number;
+  gross_amount: number | null;
+  card_fee_amount: number;
+  admin_fee_amount: number;
+  payment_method: string | null;
   status: CommissionStatus;
   calculated_at: string;
   paid_at: string | null;
