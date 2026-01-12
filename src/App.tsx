@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { CrispChat } from "@/components/CrispChat";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import Agenda from "./pages/Agenda";
@@ -32,6 +33,9 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import ResetPassword from "./pages/ResetPassword";
 
 const queryClient = new QueryClient();
+
+// TODO: Substitua pelo seu Website ID do Crisp
+const CRISP_WEBSITE_ID = "SEU_CRISP_WEBSITE_ID";
 
 // Component to protect admin-only routes
 function AdminRoute({ children }: { children: React.ReactNode }) {
@@ -151,6 +155,7 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <AuthProvider>
       <TooltipProvider>
+        <CrispChat websiteId={CRISP_WEBSITE_ID} />
         <Toaster />
         <Sonner />
         <BrowserRouter>

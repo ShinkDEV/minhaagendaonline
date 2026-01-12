@@ -1,9 +1,10 @@
-import { Calendar, Users, Scissors, LayoutDashboard, Settings, DollarSign, ChevronLeft, Crown, Percent, Gem, Package, UserCog, BarChart3 } from 'lucide-react';
+import { Calendar, Users, Scissors, LayoutDashboard, Settings, DollarSign, ChevronLeft, Crown, Percent, Gem, Package, UserCog, BarChart3, MessageCircleWarning } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { openCrispChat } from '@/components/CrispChat';
 import logo from '@/assets/logo.png';
 
 const adminNavItems = [
@@ -121,6 +122,27 @@ export function Sidebar() {
             </button>
           </div>
         )}
+
+        {/* Report Error Button */}
+        <div className="px-2 mt-2">
+          <button
+            onClick={openCrispChat}
+            className={cn(
+              "w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200",
+              "text-muted-foreground hover:bg-destructive/10 hover:text-destructive",
+              collapsed && "justify-center px-2"
+            )}
+            title={collapsed ? 'Reportar Erro' : undefined}
+          >
+            <MessageCircleWarning className="h-5 w-5 shrink-0" />
+            <span className={cn(
+              "text-sm font-medium whitespace-nowrap transition-all duration-300",
+              collapsed ? "w-0 opacity-0 overflow-hidden" : "w-auto opacity-100"
+            )}>
+              Reportar Erro
+            </span>
+          </button>
+        </div>
 
         {/* Super Admin Section */}
         {isSuperAdmin && (
