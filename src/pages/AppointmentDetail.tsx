@@ -20,6 +20,7 @@ import { useServiceCommissions } from '@/hooks/useServiceCommissions';
 import { useAppointmentLogs, formatLogAction } from '@/hooks/useAppointmentLogs';
 import { PaymentMethod } from '@/types/database';
 import { ProductSelector, SelectedProduct } from '@/components/ProductSelector';
+import { useAuth } from '@/contexts/AuthContext';
 
 const statusLabels = {
   confirmed: { label: 'Confirmado', color: 'bg-primary' },
@@ -39,6 +40,7 @@ export default function AppointmentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { salon } = useAuth();
   
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -52,9 +54,13 @@ export default function AppointmentDetail() {
   const completeAppointment = useCompleteAppointment();
   const { data: serviceCommissions = [] } = useServiceCommissions(appointment?.professional_id);
 
+  // Get fee percentages from salon
+  const cardFeePercent = (salon as any)?.card_fee_percent || 0;
+  const adminFeePercent = (salon as any)?.admin_fee_percent || 0;
+
   // Calculate commission based on service-specific rules or default
-  const { commissionAmount, commissionDetails } = useMemo(() => {
-    if (!appointment) return { commissionAmount: 0, commissionDetails: [] };
+  const { commissionAmount, commissionDetails, grossCommission, cardFeeAmount, adminFeeAmount } = useMemo(() => {
+    if (!appointment) return { commissionAmount: 0, commissionDetails: [], grossCommission: 0, cardFeeAmount: 0, adminFeeAmount: 0 };
     
     const defaultPercent = appointment.professional?.commission_percent_default || 0;
     const details: { serviceName: string; amount: number; rule: string }[] = [];
@@ -88,8 +94,20 @@ export default function AppointmentDetail() {
       total += commission;
     });
 
-    return { commissionAmount: total, commissionDetails: details };
-  }, [appointment, serviceCommissions]);
+    // Calculate fee deductions based on payment method
+    const isCardPayment = paymentMethod === 'credit_card' || paymentMethod === 'debit_card';
+    const cardFee = isCardPayment ? (total * cardFeePercent) / 100 : 0;
+    const adminFee = (total * adminFeePercent) / 100;
+    const netCommission = total - cardFee - adminFee;
+
+    return { 
+      commissionAmount: netCommission, 
+      commissionDetails: details,
+      grossCommission: total,
+      cardFeeAmount: cardFee,
+      adminFeeAmount: adminFee
+    };
+  }, [appointment, serviceCommissions, paymentMethod, cardFeePercent, adminFeePercent]);
 
   if (isLoading) {
     return (
@@ -131,6 +149,9 @@ export default function AppointmentDetail() {
         amount: Number(appointment.total_amount),
         professionalId: appointment.professional_id,
         commissionAmount,
+        grossCommissionAmount: grossCommission,
+        cardFeeAmount,
+        adminFeeAmount,
         productSales: selectedProducts.map(sp => ({
           productId: sp.product.id,
           quantity: sp.quantity,
@@ -393,8 +414,31 @@ export default function AppointmentDetail() {
                       </div>
                     ))}
                   </div>
+                  
+                  <div className="flex justify-between text-sm">
+                    <span>Comissão bruta</span>
+                    <span>R$ {grossCommission.toFixed(2)}</span>
+                  </div>
+                  
+                  {(cardFeeAmount > 0 || adminFeeAmount > 0) && (
+                    <div className="space-y-1 pl-3 border-l-2 border-destructive/30">
+                      {cardFeeAmount > 0 && (
+                        <div className="flex justify-between text-xs text-destructive">
+                          <span>(-) Taxa cartão ({cardFeePercent}%)</span>
+                          <span>- R$ {cardFeeAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                      {adminFeeAmount > 0 && (
+                        <div className="flex justify-between text-xs text-destructive">
+                          <span>(-) Taxa admin ({adminFeePercent}%)</span>
+                          <span>- R$ {adminFeeAmount.toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  
                   <div className="flex justify-between font-semibold border-t border-border pt-2">
-                    <span>Total comissão</span>
+                    <span>Comissão líquida</span>
                     <span className="text-primary">R$ {commissionAmount.toFixed(2)}</span>
                   </div>
                 </div>

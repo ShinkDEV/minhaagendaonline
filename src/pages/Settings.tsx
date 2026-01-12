@@ -20,6 +20,7 @@ import { useNavigate } from 'react-router-dom';
 import { Professional } from '@/types/database';
 import { ProfessionalCommissions } from '@/components/ProfessionalCommissions';
 import { InviteProfessional } from '@/components/InviteProfessional';
+import { CommissionFeeSettings } from '@/components/CommissionFeeSettings';
 
 export default function Settings() {
   const { salon, profile, user, salonPlan, isAdmin, isSuperAdmin, signOut, refreshProfile } = useAuth();
@@ -265,6 +266,9 @@ export default function Settings() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Commission Fees Settings */}
+            {isAdmin && <CommissionFeeSettings />}
 
             {/* Plan info */}
             {salonPlan && (

@@ -51,6 +51,9 @@ export function useCompleteAppointment() {
       amount,
       professionalId,
       commissionAmount,
+      grossCommissionAmount,
+      cardFeeAmount = 0,
+      adminFeeAmount = 0,
       productSales = []
     }: { 
       appointmentId: string; 
@@ -58,6 +61,9 @@ export function useCompleteAppointment() {
       amount: number;
       professionalId: string;
       commissionAmount: number;
+      grossCommissionAmount?: number;
+      cardFeeAmount?: number;
+      adminFeeAmount?: number;
       productSales?: ProductSale[];
     }) => {
       if (!salon?.id) throw new Error('No salon');
@@ -87,7 +93,7 @@ export function useCompleteAppointment() {
         });
       if (paymentError) throw paymentError;
 
-      // Create commission (only on services, not products)
+      // Create commission with fee details
       const { error: commissionError } = await supabase
         .from('commissions')
         .insert({
@@ -95,6 +101,10 @@ export function useCompleteAppointment() {
           appointment_id: appointmentId,
           professional_id: professionalId,
           amount: commissionAmount,
+          gross_amount: grossCommissionAmount || commissionAmount,
+          card_fee_amount: cardFeeAmount,
+          admin_fee_amount: adminFeeAmount,
+          payment_method: paymentMethod,
           status: 'pending',
         });
       if (commissionError) throw commissionError;
