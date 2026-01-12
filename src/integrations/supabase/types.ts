@@ -818,28 +818,55 @@ export type Database = {
       professionals: {
         Row: {
           active: boolean
+          bank_account: string | null
+          bank_agency: string | null
+          bank_name: string | null
+          can_delete_appointments: boolean
           commission_percent_default: number | null
+          cpf: string | null
           created_at: string
           display_name: string
           id: string
+          legal_name: string | null
+          pix_key: string | null
+          pix_key_type: string | null
+          position: string | null
           profile_id: string | null
           salon_id: string
         }
         Insert: {
           active?: boolean
+          bank_account?: string | null
+          bank_agency?: string | null
+          bank_name?: string | null
+          can_delete_appointments?: boolean
           commission_percent_default?: number | null
+          cpf?: string | null
           created_at?: string
           display_name: string
           id?: string
+          legal_name?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          position?: string | null
           profile_id?: string | null
           salon_id: string
         }
         Update: {
           active?: boolean
+          bank_account?: string | null
+          bank_agency?: string | null
+          bank_name?: string | null
+          can_delete_appointments?: boolean
           commission_percent_default?: number | null
+          cpf?: string | null
           created_at?: string
           display_name?: string
           id?: string
+          legal_name?: string | null
+          pix_key?: string | null
+          pix_key_type?: string | null
+          position?: string | null
           profile_id?: string | null
           salon_id?: string
         }

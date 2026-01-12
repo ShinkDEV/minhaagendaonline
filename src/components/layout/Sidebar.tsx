@@ -1,4 +1,4 @@
-import { Calendar, Users, Scissors, LayoutDashboard, Settings, DollarSign, ChevronLeft, Crown, Percent, Gem, Package } from 'lucide-react';
+import { Calendar, Users, Scissors, LayoutDashboard, Settings, DollarSign, ChevronLeft, Crown, Percent, Gem, Package, UserCog } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -10,6 +10,7 @@ const adminNavItems = [
   { icon: LayoutDashboard, label: 'Dashboard', path: '/dashboard' },
   { icon: Calendar, label: 'Agenda', path: '/agenda' },
   { icon: Users, label: 'Clientes', path: '/clients' },
+  { icon: UserCog, label: 'Profissionais', path: '/professionals' },
   { icon: Scissors, label: 'Serviços', path: '/services' },
   { icon: Package, label: 'Estoque', path: '/stock' },
   { icon: Percent, label: 'Comissões', path: '/commissions' },

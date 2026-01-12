@@ -53,7 +53,19 @@ export function useCreateProfessional() {
   const { salon } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: { display_name: string; commission_percent_default: number }) => {
+    mutationFn: async (data: { 
+      display_name: string; 
+      commission_percent_default: number;
+      legal_name?: string | null;
+      cpf?: string | null;
+      position?: string | null;
+      bank_name?: string | null;
+      bank_agency?: string | null;
+      bank_account?: string | null;
+      pix_key?: string | null;
+      pix_key_type?: string | null;
+      can_delete_appointments?: boolean;
+    }) => {
       if (!salon?.id) throw new Error('No salon');
       const { error } = await supabase
         .from('professionals')

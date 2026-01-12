@@ -34,6 +34,15 @@ export interface Professional {
   salon_id: string;
   profile_id: string | null;
   display_name: string;
+  legal_name: string | null;
+  cpf: string | null;
+  position: string | null;
+  bank_name: string | null;
+  bank_agency: string | null;
+  bank_account: string | null;
+  pix_key: string | null;
+  pix_key_type: string | null;
+  can_delete_appointments: boolean;
   commission_percent_default: number;
   active: boolean;
   created_at: string;
