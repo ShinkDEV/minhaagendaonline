@@ -314,35 +314,98 @@ export type Database = {
           },
         ]
       }
+      client_credit_movements: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          salon_id: string
+          type: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          salon_id: string
+          type: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          salon_id?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "client_credit_movements_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_credit_movements_salon_id_fkey"
+            columns: ["salon_id"]
+            isOneToOne: false
+            referencedRelation: "salons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           avatar_url: string | null
+          birth_date: string | null
+          cpf: string | null
           created_at: string
+          credit_balance: number
           email: string | null
           full_name: string
+          gender: string | null
           id: string
           notes: string | null
           phone: string | null
+          rg: string | null
           salon_id: string
         }
         Insert: {
           avatar_url?: string | null
+          birth_date?: string | null
+          cpf?: string | null
           created_at?: string
+          credit_balance?: number
           email?: string | null
           full_name: string
+          gender?: string | null
           id?: string
           notes?: string | null
           phone?: string | null
+          rg?: string | null
           salon_id: string
         }
         Update: {
           avatar_url?: string | null
+          birth_date?: string | null
+          cpf?: string | null
           created_at?: string
+          credit_balance?: number
           email?: string | null
           full_name?: string
+          gender?: string | null
           id?: string
           notes?: string | null
           phone?: string | null
+          rg?: string | null
           salon_id?: string
         }
         Relationships: [
