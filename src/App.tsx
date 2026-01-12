@@ -12,6 +12,7 @@ import AppointmentDetail from "./pages/AppointmentDetail";
 import Clientes from "./pages/Clientes";
 import ClientDetail from "./pages/ClientDetail";
 import Servicos from "./pages/Servicos";
+import Profissionais from "./pages/Profissionais";
 import Financeiro from "./pages/Financeiro";
 import Estoque from "./pages/Estoque";
 import Reports from "./pages/Reports";
@@ -87,6 +88,7 @@ function AppRoutes() {
         <Route path="/clients" element={<Clientes />} />
         <Route path="/clients/:id" element={<ClientDetail />} />
         <Route path="/services" element={<Servicos />} />
+        <Route path="/professionals" element={<Profissionais />} />
         <Route path="/financial" element={<Financeiro />} />
         <Route path="/stock" element={<Estoque />} />
         <Route path="/reports" element={<Reports />} />
@@ -132,6 +134,7 @@ function AppRoutes() {
       <Route path="/clientes" element={<Navigate to="/clients" replace />} />
       <Route path="/services" element={<AdminRoute><Servicos /></AdminRoute>} />
       <Route path="/servicos" element={<Navigate to="/services" replace />} />
+      <Route path="/professionals" element={<AdminRoute><Profissionais /></AdminRoute>} />
       <Route path="/financial" element={<AdminRoute><Financeiro /></AdminRoute>} />
       <Route path="/stock" element={<AdminRoute><Estoque /></AdminRoute>} />
       <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
