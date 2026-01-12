@@ -59,7 +59,16 @@ export function useCreateClient() {
   const { salon } = useAuth();
 
   return useMutation({
-    mutationFn: async (data: { full_name: string; phone?: string; email?: string; notes?: string }) => {
+    mutationFn: async (data: {
+      full_name: string;
+      phone?: string;
+      email?: string;
+      notes?: string;
+      birth_date?: string;
+      gender?: string;
+      cpf?: string;
+      rg?: string;
+    }) => {
       if (!salon?.id) throw new Error('No salon');
       const { data: result, error } = await supabase
         .from('clients')
@@ -79,15 +88,26 @@ export function useUpdateClient() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ id, ...data }: Partial<Client> & { id: string }) => {
+    mutationFn: async ({ id, ...data }: {
+      id: string;
+      full_name?: string;
+      phone?: string | null;
+      email?: string | null;
+      notes?: string | null;
+      birth_date?: string | null;
+      gender?: string | null;
+      cpf?: string | null;
+      rg?: string | null;
+    }) => {
       const { error } = await supabase
         .from('clients')
         .update(data)
         .eq('id', id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['clients'] });
+      queryClient.invalidateQueries({ queryKey: ['client', variables.id] });
     },
   });
 }

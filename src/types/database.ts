@@ -58,6 +58,22 @@ export interface Client {
   email: string | null;
   notes: string | null;
   avatar_url: string | null;
+  birth_date: string | null;
+  gender: string | null;
+  cpf: string | null;
+  rg: string | null;
+  credit_balance: number;
+  created_at: string;
+}
+
+export interface ClientCreditMovement {
+  id: string;
+  salon_id: string;
+  client_id: string;
+  amount: number;
+  type: 'credit' | 'debit';
+  description: string | null;
+  created_by: string | null;
   created_at: string;
 }
 
