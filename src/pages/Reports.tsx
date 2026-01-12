@@ -8,10 +8,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { TrendingUp, Users, Scissors, DollarSign, Calendar, Percent } from 'lucide-react';
-import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
+import { TrendingUp, Users, Scissors, DollarSign, Calendar, Percent, UserPlus, Receipt, UserCircle } from 'lucide-react';
+import { format, startOfMonth, endOfMonth, subMonths, differenceInYears, parseISO } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 type PeriodOption = 'this_month' | 'last_month' | 'last_3_months';
@@ -36,7 +36,7 @@ export default function Reports() {
     }
   }, [period]);
 
-  // Fetch completed appointments with services
+  // Fetch completed appointments with services and client info
   const { data: appointments } = useQuery({
     queryKey: ['report-appointments', salon?.id, dateRange.start, dateRange.end],
     queryFn: async () => {
@@ -46,6 +46,7 @@ export default function Reports() {
         .select(`
           *,
           professional:professionals(id, display_name),
+          client:clients(id, full_name, birth_date, gender, created_at),
           appointment_services(
             price_charged,
             service:services(id, name)
@@ -54,6 +55,40 @@ export default function Reports() {
         .eq('salon_id', salon.id)
         .gte('start_at', dateRange.start.toISOString())
         .lte('start_at', dateRange.end.toISOString());
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!salon?.id,
+  });
+
+  // Fetch new clients in period
+  const { data: newClients } = useQuery({
+    queryKey: ['report-new-clients', salon?.id, dateRange.start, dateRange.end],
+    queryFn: async () => {
+      if (!salon?.id) return [];
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, full_name, birth_date, gender, created_at')
+        .eq('salon_id', salon.id)
+        .gte('created_at', dateRange.start.toISOString())
+        .lte('created_at', dateRange.end.toISOString());
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!salon?.id,
+  });
+
+  // Fetch all clients for demographics
+  const { data: allClients } = useQuery({
+    queryKey: ['report-all-clients', salon?.id],
+    queryFn: async () => {
+      if (!salon?.id) return [];
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, birth_date, gender')
+        .eq('salon_id', salon.id);
 
       if (error) throw error;
       return data;
@@ -92,6 +127,12 @@ export default function Reports() {
     const cancellationRate = totalAppointments > 0 
       ? ((cancelledCount / totalAppointments) * 100).toFixed(1) 
       : '0';
+    const averageTicket = completedCount > 0 ? totalRevenue / completedCount : 0;
+
+    // Unique clients served
+    const uniqueClientsServed = new Set(
+      completed.filter(a => a.client_id).map(a => a.client_id)
+    ).size;
 
     return {
       totalRevenue,
@@ -99,8 +140,60 @@ export default function Reports() {
       completedCount,
       cancelledCount,
       cancellationRate,
+      averageTicket,
+      uniqueClientsServed,
+      newClientsCount: newClients?.length || 0,
     };
-  }, [appointments]);
+  }, [appointments, newClients]);
+
+  // Age distribution
+  const ageDistribution = useMemo(() => {
+    if (!allClients) return [];
+
+    const ranges = [
+      { label: '0-17', min: 0, max: 17, count: 0 },
+      { label: '18-25', min: 18, max: 25, count: 0 },
+      { label: '26-35', min: 26, max: 35, count: 0 },
+      { label: '36-45', min: 36, max: 45, count: 0 },
+      { label: '46-55', min: 46, max: 55, count: 0 },
+      { label: '56+', min: 56, max: 150, count: 0 },
+    ];
+
+    let withBirthDate = 0;
+    allClients.forEach(client => {
+      if (client.birth_date) {
+        withBirthDate++;
+        const age = differenceInYears(new Date(), parseISO(client.birth_date));
+        const range = ranges.find(r => age >= r.min && age <= r.max);
+        if (range) range.count++;
+      }
+    });
+
+    return withBirthDate > 0 ? ranges.filter(r => r.count > 0) : [];
+  }, [allClients]);
+
+  // Gender distribution
+  const genderDistribution = useMemo(() => {
+    if (!allClients) return [];
+
+    const genderMap: Record<string, { name: string; count: number; color: string }> = {
+      female: { name: 'Feminino', count: 0, color: 'hsl(330, 70%, 60%)' },
+      male: { name: 'Masculino', count: 0, color: 'hsl(210, 70%, 60%)' },
+      other: { name: 'Outro', count: 0, color: 'hsl(45, 70%, 60%)' },
+      not_informed: { name: 'Não informado', count: 0, color: 'hsl(0, 0%, 60%)' },
+    };
+
+    allClients.forEach(client => {
+      const gender = client.gender || 'not_informed';
+      if (genderMap[gender]) {
+        genderMap[gender].count++;
+      } else {
+        genderMap['not_informed'].count++;
+      }
+    });
+
+    return Object.values(genderMap).filter(g => g.count > 0);
+  }, [allClients]);
 
   // Revenue by professional
   const revenueByProfessional = useMemo(() => {
@@ -252,6 +345,18 @@ export default function Reports() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                <Receipt className="h-4 w-4" />
+                <span className="text-xs">Ticket Médio</span>
+              </div>
+              <p className="text-xl font-bold text-primary">
+                R$ {metrics?.averageTicket.toFixed(2) || '0,00'}
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Calendar className="h-4 w-4" />
                 <span className="text-xs">Atendimentos</span>
               </div>
@@ -265,6 +370,26 @@ export default function Reports() {
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                <Users className="h-4 w-4" />
+                <span className="text-xs">Clientes Atendidos</span>
+              </div>
+              <p className="text-xl font-bold">{metrics?.uniqueClientsServed || 0}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                <UserPlus className="h-4 w-4" />
+                <span className="text-xs">Clientes Novos</span>
+              </div>
+              <p className="text-xl font-bold text-green-600">{metrics?.newClientsCount || 0}</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-2 text-muted-foreground mb-1">
                 <Percent className="h-4 w-4" />
                 <span className="text-xs">Taxa Ocupação</span>
               </div>
@@ -272,23 +397,29 @@ export default function Reports() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2 text-muted-foreground mb-1">
-                <TrendingUp className="h-4 w-4" />
-                <span className="text-xs">Cancelamentos</span>
+          <Card className="col-span-2">
+            <CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2 text-muted-foreground mb-1">
+                  <TrendingUp className="h-4 w-4" />
+                  <span className="text-xs">Cancelamentos</span>
+                </div>
+                <p className="text-xl font-bold text-destructive">
+                  {metrics?.cancellationRate || 0}%
+                </p>
               </div>
-              <p className="text-xl font-bold text-destructive">
-                {metrics?.cancellationRate || 0}%
+              <p className="text-sm text-muted-foreground">
+                {metrics?.cancelledCount || 0} de {metrics?.totalAppointments || 0} agendamentos
               </p>
             </CardContent>
           </Card>
         </div>
 
         <Tabs defaultValue="professionals" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="professionals">Profissionais</TabsTrigger>
             <TabsTrigger value="services">Serviços</TabsTrigger>
+            <TabsTrigger value="clients">Clientes</TabsTrigger>
             <TabsTrigger value="commissions">Comissões</TabsTrigger>
           </TabsList>
 
@@ -408,6 +539,136 @@ export default function Reports() {
                 </Card>
               ))}
             </div>
+          </TabsContent>
+
+          {/* Clients Demographics */}
+          <TabsContent value="clients" className="space-y-4">
+            {/* Age Distribution */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  Faixa Etária dos Clientes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {ageDistribution.length > 0 ? (
+                  <ChartContainer config={chartConfig} className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={ageDistribution}>
+                        <XAxis dataKey="label" tick={{ fontSize: 12 }} />
+                        <YAxis />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                        <Bar dataKey="count" fill="hsl(var(--primary))" radius={4} name="Clientes" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum cliente com data de nascimento cadastrada
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Age Range Details */}
+            {ageDistribution.length > 0 && (
+              <div className="grid grid-cols-3 gap-2">
+                {ageDistribution.map((range, idx) => (
+                  <Card key={idx}>
+                    <CardContent className="p-3 text-center">
+                      <p className="text-lg font-bold">{range.count}</p>
+                      <p className="text-xs text-muted-foreground">{range.label} anos</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Gender Distribution */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-base flex items-center gap-2">
+                  <UserCircle className="h-4 w-4" />
+                  Clientes por Gênero
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {genderDistribution.length > 0 ? (
+                  <ChartContainer config={chartConfig} className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={genderDistribution}
+                          dataKey="count"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={80}
+                          label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
+                          labelLine={false}
+                        >
+                          {genderDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color} />
+                          ))}
+                        </Pie>
+                        <Legend />
+                        <ChartTooltip content={<ChartTooltipContent />} />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                ) : (
+                  <p className="text-center text-muted-foreground py-8">
+                    Nenhum cliente cadastrado
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Gender Details */}
+            {genderDistribution.length > 0 && (
+              <div className="grid grid-cols-2 gap-2">
+                {genderDistribution.map((gender, idx) => (
+                  <Card key={idx}>
+                    <CardContent className="p-4 flex items-center gap-3">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: gender.color }}
+                      />
+                      <div>
+                        <p className="font-medium">{gender.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {gender.count} cliente{gender.count !== 1 ? 's' : ''} 
+                          {' '}({allClients && allClients.length > 0 
+                            ? ((gender.count / allClients.length) * 100).toFixed(0) 
+                            : 0}%)
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {/* Summary */}
+            <Card className="bg-muted/50">
+              <CardContent className="p-4">
+                <div className="grid grid-cols-3 text-center divide-x">
+                  <div>
+                    <p className="text-2xl font-bold">{allClients?.length || 0}</p>
+                    <p className="text-xs text-muted-foreground">Total Clientes</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold text-green-600">{newClients?.length || 0}</p>
+                    <p className="text-xs text-muted-foreground">Novos no período</p>
+                  </div>
+                  <div>
+                    <p className="text-2xl font-bold">{metrics?.uniqueClientsServed || 0}</p>
+                    <p className="text-xs text-muted-foreground">Atendidos</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
 
           {/* Commissions */}
