@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,12 +9,49 @@ import { TimeBlockManager } from '@/components/TimeBlockManager';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Building2, LogOut, Save, Gem, Crown, KeyRound } from 'lucide-react';
+import { Building2, LogOut, Save, Gem, Crown, KeyRound, MessageCircleWarning, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { CommissionFeeSettings } from '@/components/CommissionFeeSettings';
+
+// Declare Crisp on window
+declare global {
+  interface Window {
+    $crisp: any[];
+    CRISP_WEBSITE_ID: string;
+  }
+}
+
+function initCrisp(websiteId: string) {
+  if (typeof window !== 'undefined' && websiteId) {
+    if (window.$crisp) {
+      window.$crisp.push(['do', 'chat:show']);
+      window.$crisp.push(['do', 'chat:open']);
+      return;
+    }
+
+    window.$crisp = [];
+    window.CRISP_WEBSITE_ID = websiteId;
+
+    const script = document.createElement('script');
+    script.src = 'https://client.crisp.chat/l.js';
+    script.async = true;
+    script.onload = () => {
+      if (window.$crisp) {
+        window.$crisp.push(['do', 'chat:open']);
+      }
+    };
+    document.head.appendChild(script);
+  }
+}
+
+function hideCrisp() {
+  if (typeof window !== 'undefined' && window.$crisp) {
+    window.$crisp.push(['do', 'chat:hide']);
+  }
+}
 
 export default function Settings() {
   const { salon, profile, user, salonPlan, isAdmin, isSuperAdmin, signOut, refreshProfile, maxProfessionals } = useAuth();
@@ -32,6 +69,11 @@ export default function Settings() {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [changingPassword, setChangingPassword] = useState(false);
+
+  // Crisp support
+  const [crispLoading, setCrispLoading] = useState(false);
+  const [crispError, setCrispError] = useState<string | null>(null);
+  const [crispActive, setCrispActive] = useState(false);
 
   const handleSaveSalon = async () => {
     if (!salon?.id) return;
@@ -95,17 +137,58 @@ export default function Settings() {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
+  const loadCrispChat = async () => {
+    if (crispActive) return;
+    setCrispLoading(true);
+    setCrispError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-crisp-config');
+      if (error) {
+        setCrispError('Erro ao carregar o chat de suporte');
+        return;
+      }
+      if (data?.websiteId) {
+        initCrisp(data.websiteId);
+        setCrispActive(true);
+      } else {
+        setCrispError('Configuração do chat não encontrada');
+      }
+    } catch {
+      setCrispError('Erro ao inicializar o chat');
+    } finally {
+      setCrispLoading(false);
+    }
+  };
+
+  const handleTabChange = (value: string) => {
+    if (value === 'support') {
+      loadCrispChat();
+    } else {
+      hideCrisp();
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      hideCrisp();
+    };
+  }, []);
+
   return (
     <AppLayout title="Configurações">
       <div className="space-y-4">
-        <Tabs defaultValue="salon">
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs defaultValue="salon" onValueChange={handleTabChange}>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="salon">
               <Building2 className="h-4 w-4 mr-2" />
               Salão
             </TabsTrigger>
             <TabsTrigger value="blocks">
               Bloqueios
+            </TabsTrigger>
+            <TabsTrigger value="support">
+              <MessageCircleWarning className="h-4 w-4 mr-2" />
+              Suporte
             </TabsTrigger>
           </TabsList>
 
@@ -245,6 +328,53 @@ export default function Settings() {
           {/* Blocks Tab */}
           <TabsContent value="blocks" className="space-y-4 mt-4">
             <TimeBlockManager />
+          </TabsContent>
+
+          {/* Support Tab */}
+          <TabsContent value="support" className="space-y-4 mt-4">
+            <Card className="border-0 shadow-sm">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircleWarning className="h-5 w-5" />
+                  Chat de Suporte
+                </CardTitle>
+                <CardDescription>
+                  Fale conosco para reportar problemas ou tirar dúvidas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {crispLoading ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                    <span className="ml-2 text-muted-foreground">Carregando chat...</span>
+                  </div>
+                ) : crispError ? (
+                  <div className="text-center py-12 text-destructive">
+                    <MessageCircleWarning className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>{crispError}</p>
+                    <Button variant="outline" className="mt-4" onClick={loadCrispChat}>
+                      Tentar novamente
+                    </Button>
+                  </div>
+                ) : crispActive ? (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <MessageCircleWarning className="h-12 w-12 mx-auto mb-4 text-primary" />
+                    <p className="font-medium">Chat ativo!</p>
+                    <p className="text-sm mt-1">
+                      Clique no ícone de chat no canto inferior direito da tela
+                    </p>
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-muted-foreground">
+                    <MessageCircleWarning className="h-12 w-12 mx-auto mb-4" />
+                    <p>Clique para abrir o chat de suporte</p>
+                    <Button className="mt-4" onClick={loadCrispChat}>
+                      Abrir Chat
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

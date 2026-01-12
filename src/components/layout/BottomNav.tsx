@@ -1,4 +1,4 @@
-import { Calendar, Users, LayoutDashboard, Settings, DollarSign, BarChart3, MessageCircleWarning } from 'lucide-react';
+import { Calendar, Users, LayoutDashboard, Settings, DollarSign, BarChart3 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
@@ -48,20 +48,6 @@ export function BottomNav() {
             </button>
           );
         })}
-        
-        {/* Report Error Button */}
-        <button
-          onClick={() => navigate('/report-error')}
-          className={cn(
-            "flex flex-col items-center justify-center w-full h-full gap-0.5 transition-colors touch-manipulation",
-            location.pathname === '/report-error'
-              ? "text-destructive"
-              : "text-muted-foreground hover:text-destructive"
-          )}
-        >
-          <MessageCircleWarning className="h-5 w-5" />
-          <span className="text-[10px] font-medium">Erro</span>
-        </button>
       </div>
     </nav>
   );
