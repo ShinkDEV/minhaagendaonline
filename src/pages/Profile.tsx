@@ -4,15 +4,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, User, Building2, Percent } from 'lucide-react';
+import { LogOut, User, Building2, Percent, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export default function Profile() {
   const { profile, salon, user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const [signingOut, setSigningOut] = useState(false);
 
   // Get professional data for current user
   const { data: professional } = useQuery({
@@ -32,8 +35,19 @@ export default function Profile() {
   });
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/login');
+    setSigningOut(true);
+    try {
+      await signOut();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast({
+        variant: 'destructive',
+        title: 'Erro ao sair',
+        description: 'Tente novamente',
+      });
+      setSigningOut(false);
+    }
   };
 
   const getInitials = (name: string) => {
@@ -100,9 +114,18 @@ export default function Profile() {
         )}
 
         {/* Sign Out */}
-        <Button variant="destructive" className="w-full" onClick={handleSignOut}>
-          <LogOut className="h-4 w-4 mr-2" />
-          Sair da conta
+        <Button 
+          variant="destructive" 
+          className="w-full" 
+          onClick={handleSignOut}
+          disabled={signingOut}
+        >
+          {signingOut ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <LogOut className="h-4 w-4 mr-2" />
+          )}
+          {signingOut ? 'Saindo...' : 'Sair da conta'}
         </Button>
       </div>
     </AppLayout>
