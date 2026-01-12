@@ -972,6 +972,7 @@ export type Database = {
           address: string | null
           admin_fee_percent: number
           card_fee_percent: number
+          card_fees_by_installment: Json
           created_at: string
           id: string
           name: string
@@ -982,6 +983,7 @@ export type Database = {
           address?: string | null
           admin_fee_percent?: number
           card_fee_percent?: number
+          card_fees_by_installment?: Json
           created_at?: string
           id?: string
           name: string
@@ -992,6 +994,7 @@ export type Database = {
           address?: string | null
           admin_fee_percent?: number
           card_fee_percent?: number
+          card_fees_by_installment?: Json
           created_at?: string
           id?: string
           name?: string

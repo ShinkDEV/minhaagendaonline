@@ -5,6 +5,10 @@ export type CommissionType = 'percent' | 'fixed';
 export type CommissionStatus = 'pending' | 'paid';
 export type CashflowType = 'income' | 'expense';
 
+export type CardFeesByInstallment = {
+  [key: string]: number; // "1" to "12"
+};
+
 export interface Salon {
   id: string;
   name: string;
@@ -13,6 +17,7 @@ export interface Salon {
   timezone: string;
   card_fee_percent: number;
   admin_fee_percent: number;
+  card_fees_by_installment: CardFeesByInstallment;
   created_at: string;
 }
 
