@@ -41,6 +41,71 @@ const getInitials = (name: string) => {
     .slice(0, 2);
 };
 
+const MAX_SIZE = 512; // Max width/height in pixels
+const QUALITY = 0.8; // JPEG quality (0-1)
+
+const compressImage = (file: File): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    img.onload = () => {
+      URL.revokeObjectURL(img.src);
+
+      let { width, height } = img;
+
+      // Calculate new dimensions maintaining aspect ratio
+      if (width > height) {
+        if (width > MAX_SIZE) {
+          height = Math.round((height * MAX_SIZE) / width);
+          width = MAX_SIZE;
+        }
+      } else {
+        if (height > MAX_SIZE) {
+          width = Math.round((width * MAX_SIZE) / height);
+          height = MAX_SIZE;
+        }
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      if (!ctx) {
+        reject(new Error('Could not get canvas context'));
+        return;
+      }
+
+      // Draw image with white background (for transparency)
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Could not compress image'));
+            return;
+          }
+          const compressedFile = new File([blob], file.name.replace(/\.\w+$/, '.jpg'), {
+            type: 'image/jpeg',
+            lastModified: Date.now(),
+          });
+          resolve(compressedFile);
+        },
+        'image/jpeg',
+        QUALITY
+      );
+    };
+
+    img.onerror = () => {
+      reject(new Error('Failed to load image'));
+    };
+
+    img.src = URL.createObjectURL(file);
+  });
+};
+
 export const ClientAvatarUpload = ({
   clientId,
   clientName,
@@ -63,20 +128,23 @@ export const ClientAvatarUpload = ({
       return;
     }
 
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error('A imagem deve ter no máximo 5MB');
+    // Validate file size (10MB before compression)
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error('A imagem deve ter no máximo 10MB');
       return;
     }
 
-    // Show preview
-    const objectUrl = URL.createObjectURL(file);
-    setPreviewUrl(objectUrl);
-
     setIsUploading(true);
     try {
+      // Compress image before upload
+      const compressedFile = await compressImage(file);
+      console.log(`Compressed: ${(file.size / 1024).toFixed(1)}KB → ${(compressedFile.size / 1024).toFixed(1)}KB`);
+
+      // Show preview of compressed image
+      const objectUrl = URL.createObjectURL(compressedFile);
+      setPreviewUrl(objectUrl);
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', compressedFile);
       formData.append('clientId', clientId);
 
       const { data, error } = await supabase.functions.invoke('upload-avatar', {
