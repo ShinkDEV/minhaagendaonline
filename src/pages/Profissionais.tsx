@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useProfessionals, useCreateProfessional, useUpdateProfessional } from '@/hooks/useProfessionals';
+import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -11,8 +12,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sh
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
+import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, User, CreditCard, Shield, Mail, Percent, Building2, KeyRound } from 'lucide-react';
+import { Plus, User, CreditCard, Shield, Mail, Percent, Building2, KeyRound, Users, AlertCircle } from 'lucide-react';
 import { Professional } from '@/types/database';
 
 const formatCpf = (value: string) => {
@@ -26,6 +28,7 @@ const formatCpf = (value: string) => {
 
 export default function Profissionais() {
   const { toast } = useToast();
+  const { maxProfessionals } = useAuth();
   const { data: professionals = [], isLoading } = useProfessionals(true);
   const createProfessional = useCreateProfessional();
   const updateProfessional = useUpdateProfessional();
@@ -128,10 +131,46 @@ export default function Profissionais() {
 
   const activeProfessionals = professionals.filter(p => p.active);
   const inactiveProfessionals = professionals.filter(p => !p.active);
+  
+  const limitReached = maxProfessionals ? activeProfessionals.length >= maxProfessionals : false;
+  const usagePercent = maxProfessionals ? (activeProfessionals.length / maxProfessionals) * 100 : 0;
 
   return (
     <AppLayout title="Profissionais">
       <div className="p-4 space-y-4 pb-24">
+        {/* Plan Limit Banner */}
+        {maxProfessionals && (
+          <Card className={limitReached ? 'border-destructive bg-destructive/5' : 'border-primary/20 bg-primary/5'}>
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className={`h-10 w-10 rounded-full flex items-center justify-center ${limitReached ? 'bg-destructive/10' : 'bg-primary/10'}`}>
+                  <Users className={`h-5 w-5 ${limitReached ? 'text-destructive' : 'text-primary'}`} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center justify-between mb-1">
+                    <p className="font-medium text-sm">
+                      Limite do Plano
+                    </p>
+                    <span className={`text-sm font-semibold ${limitReached ? 'text-destructive' : 'text-primary'}`}>
+                      {activeProfessionals.length} / {maxProfessionals}
+                    </span>
+                  </div>
+                  <Progress 
+                    value={usagePercent} 
+                    className={`h-2 ${limitReached ? '[&>div]:bg-destructive' : ''}`}
+                  />
+                  {limitReached && (
+                    <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" />
+                      Limite atingido. Faça upgrade para adicionar mais profissionais.
+                    </p>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -140,7 +179,7 @@ export default function Profissionais() {
               {activeProfessionals.length} ativo{activeProfessionals.length !== 1 ? 's' : ''}
             </p>
           </div>
-          <Button onClick={openNewProfessional} size="sm">
+          <Button onClick={openNewProfessional} size="sm" disabled={limitReached}>
             <Plus className="h-4 w-4 mr-1" />
             Novo
           </Button>

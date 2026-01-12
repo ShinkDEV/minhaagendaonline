@@ -12,6 +12,7 @@ interface AuthContextType {
   userRoles: UserRole[];
   salonPlan: (SalonPlan & { plan: Plan }) | null;
   professionalId: string | null;
+  maxProfessionals: number | null;
   loading: boolean;
   isAdmin: boolean;
   isSuperAdmin: boolean;
@@ -168,10 +169,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const isSuperAdmin = userRoles.some(r => r.role === 'super_admin');
   // Super admin with a salon is also treated as admin
   const isAdmin = userRoles.some(r => r.role === 'admin') || (isSuperAdmin && !!profile?.salon_id);
+  const maxProfessionals = salonPlan?.plan?.max_professionals ?? null;
 
   return (
     <AuthContext.Provider value={{ 
-      user, session, profile, salon, userRole, userRoles, salonPlan, professionalId, loading, isAdmin, isSuperAdmin, trialCancelled,
+      user, session, profile, salon, userRole, userRoles, salonPlan, professionalId, maxProfessionals, loading, isAdmin, isSuperAdmin, trialCancelled,
       signIn, signUp, signOut, refreshProfile 
     }}>
       {children}
