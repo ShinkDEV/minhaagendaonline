@@ -57,20 +57,45 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const fetchUserData = async (userId: string) => {
     try {
       // Fetch profile
-      const { data: profileData } = await supabase
+      let { data: profileData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .maybeSingle();
       
-      setProfile(profileData);
-
       // Fetch all roles for user (including super_admin)
-      const { data: rolesData } = await supabase
+      let { data: rolesData } = await supabase
         .from('user_roles')
         .select('*')
         .eq('user_id', userId);
+
+      // If user has no salon, check if they're a trial user and set up their salon
+      if (!profileData?.salon_id) {
+        try {
+          const { data: setupResult, error: setupError } = await supabase.functions.invoke('setup-trial-salon');
+          
+          if (!setupError && setupResult?.success) {
+            // Refetch profile and roles after setup
+            const { data: updatedProfile } = await supabase
+              .from('profiles')
+              .select('*')
+              .eq('id', userId)
+              .maybeSingle();
+            
+            const { data: updatedRoles } = await supabase
+              .from('user_roles')
+              .select('*')
+              .eq('user_id', userId);
+            
+            profileData = updatedProfile;
+            rolesData = updatedRoles;
+          }
+        } catch (setupErr) {
+          console.error('Error setting up trial salon:', setupErr);
+        }
+      }
       
+      setProfile(profileData);
       setUserRoles(rolesData as UserRole[] || []);
       setUserRole(rolesData?.[0] as UserRole || null);
 
