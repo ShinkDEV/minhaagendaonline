@@ -18,7 +18,7 @@ import { useAppointment, useUpdateAppointmentStatus } from '@/hooks/useAppointme
 import { useCompleteAppointment } from '@/hooks/useCommissions';
 import { useServiceCommissions } from '@/hooks/useServiceCommissions';
 import { useAppointmentLogs, formatLogAction } from '@/hooks/useAppointmentLogs';
-import { PaymentMethod } from '@/types/database';
+import { PaymentMethod, CardFeesByInstallment } from '@/types/database';
 import { ProductSelector, SelectedProduct } from '@/components/ProductSelector';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -45,6 +45,7 @@ export default function AppointmentDetail() {
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
+  const [installments, setInstallments] = useState<number>(1);
   const [cancelReason, setCancelReason] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
 
@@ -55,12 +56,12 @@ export default function AppointmentDetail() {
   const { data: serviceCommissions = [] } = useServiceCommissions(appointment?.professional_id);
 
   // Get fee percentages from salon
-  const cardFeePercent = (salon as any)?.card_fee_percent || 0;
+  const cardFeesByInstallment = (salon as any)?.card_fees_by_installment as CardFeesByInstallment || {};
   const adminFeePercent = (salon as any)?.admin_fee_percent || 0;
 
   // Calculate commission based on service-specific rules or default
-  const { commissionAmount, commissionDetails, grossCommission, cardFeeAmount, adminFeeAmount } = useMemo(() => {
-    if (!appointment) return { commissionAmount: 0, commissionDetails: [], grossCommission: 0, cardFeeAmount: 0, adminFeeAmount: 0 };
+  const { commissionAmount, commissionDetails, grossCommission, cardFeeAmount, adminFeeAmount, cardFeePercent } = useMemo(() => {
+    if (!appointment) return { commissionAmount: 0, commissionDetails: [], grossCommission: 0, cardFeeAmount: 0, adminFeeAmount: 0, cardFeePercent: 0 };
     
     const defaultPercent = appointment.professional?.commission_percent_default || 0;
     const details: { serviceName: string; amount: number; rule: string }[] = [];
@@ -94,9 +95,10 @@ export default function AppointmentDetail() {
       total += commission;
     });
 
-    // Calculate fee deductions based on payment method
-    const isCardPayment = paymentMethod === 'credit_card' || paymentMethod === 'debit_card';
-    const cardFee = isCardPayment ? (total * cardFeePercent) / 100 : 0;
+    // Calculate fee deductions based on payment method and installments
+    const isCardPayment = paymentMethod === 'credit_card';
+    const currentCardFeePercent = isCardPayment ? (cardFeesByInstallment[String(installments)] || 0) : 0;
+    const cardFee = (total * currentCardFeePercent) / 100;
     const adminFee = (total * adminFeePercent) / 100;
     const netCommission = total - cardFee - adminFee;
 
@@ -105,9 +107,10 @@ export default function AppointmentDetail() {
       commissionDetails: details,
       grossCommission: total,
       cardFeeAmount: cardFee,
-      adminFeeAmount: adminFee
+      adminFeeAmount: adminFee,
+      cardFeePercent: currentCardFeePercent
     };
-  }, [appointment, serviceCommissions, paymentMethod, cardFeePercent, adminFeePercent]);
+  }, [appointment, serviceCommissions, paymentMethod, installments, cardFeesByInstallment, adminFeePercent]);
 
   if (isLoading) {
     return (
@@ -359,7 +362,10 @@ export default function AppointmentDetail() {
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label>Forma de Pagamento</Label>
-                  <Select value={paymentMethod} onValueChange={(v) => setPaymentMethod(v as PaymentMethod)}>
+                  <Select value={paymentMethod} onValueChange={(v) => {
+                    setPaymentMethod(v as PaymentMethod);
+                    if (v !== 'credit_card') setInstallments(1);
+                  }}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -372,6 +378,27 @@ export default function AppointmentDetail() {
                     </SelectContent>
                   </Select>
                 </div>
+
+                {paymentMethod === 'credit_card' && (
+                  <div className="space-y-2">
+                    <Label>Parcelas</Label>
+                    <Select value={String(installments)} onValueChange={(v) => setInstallments(Number(v))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => {
+                          const feePercent = cardFeesByInstallment[String(num)] || 0;
+                          return (
+                            <SelectItem key={num} value={String(num)}>
+                              {num}x {feePercent > 0 ? `(taxa: ${feePercent}%)` : ''}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
 
                 <Separator />
 
@@ -424,7 +451,7 @@ export default function AppointmentDetail() {
                     <div className="space-y-1 pl-3 border-l-2 border-destructive/30">
                       {cardFeeAmount > 0 && (
                         <div className="flex justify-between text-xs text-destructive">
-                          <span>(-) Taxa cartão ({cardFeePercent}%)</span>
+                          <span>(-) Taxa cartão {installments}x ({cardFeePercent}%)</span>
                           <span>- R$ {cardFeeAmount.toFixed(2)}</span>
                         </div>
                       )}

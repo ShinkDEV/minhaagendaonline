@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { Profile, UserRole, Salon, SalonPlan, Plan } from '@/types/database';
+import { Profile, UserRole, Salon, SalonPlan, Plan, CardFeesByInstallment } from '@/types/database';
 
 interface AuthContextType {
   user: User | null;
@@ -76,7 +76,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           supabase.from('professionals').select('id').eq('profile_id', userId).maybeSingle()
         ]);
 
-        setSalon(salonResult.data);
+        // Cast card_fees_by_installment to correct type
+        const salonData = salonResult.data ? {
+          ...salonResult.data,
+          card_fees_by_installment: (salonResult.data.card_fees_by_installment || {}) as CardFeesByInstallment
+        } as Salon : null;
+
+        setSalon(salonData);
         setSalonPlan(planResult.data as (SalonPlan & { plan: Plan }) | null);
         setProfessionalId(professionalResult.data?.id || null);
       }
