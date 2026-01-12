@@ -17,7 +17,7 @@ export default function TrialRegister() {
   const [loading, setLoading] = useState(false);
   const [validating, setValidating] = useState(true);
   const [linkValid, setLinkValid] = useState(false);
-  const [linkData, setLinkData] = useState<{ id: string; notes: string | null } | null>(null);
+  const [linkData, setLinkData] = useState<{ id: string; notes: string | null; trial_days: number } | null>(null);
   const { signUp } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -35,7 +35,7 @@ export default function TrialRegister() {
     try {
       const { data, error } = await supabase
         .from('trial_invite_links')
-        .select('id, notes, active')
+        .select('id, notes, active, trial_days')
         .eq('code', code.toUpperCase())
         .eq('active', true)
         .maybeSingle();
@@ -66,12 +66,13 @@ export default function TrialRegister() {
         throw signUpError;
       }
 
-      // Add to free_trial_users table
+      // Add to free_trial_users table with trial_days
       const { error: trialError } = await supabase
         .from('free_trial_users')
         .insert({
           email: email.toLowerCase(),
           invite_link_id: linkData.id,
+          trial_days: linkData.trial_days,
           notes: `Registrado via link: ${code}`,
         });
 
@@ -141,7 +142,9 @@ export default function TrialRegister() {
           <h1 className="text-2xl font-bold text-foreground">Minha Agenda Online</h1>
           <div className="flex items-center gap-2 mt-2 text-green-600">
             <Gift className="h-4 w-4" />
-            <span className="text-sm font-medium">Teste Gratuito Ilimitado</span>
+            <span className="text-sm font-medium">
+              Teste Gratuito por {linkData?.trial_days || 14} dias
+            </span>
           </div>
         </div>
 
@@ -149,7 +152,7 @@ export default function TrialRegister() {
           <CardHeader>
             <CardTitle>Criar Conta Gratuita</CardTitle>
             <CardDescription>
-              Você foi convidado para usar nossa plataforma gratuitamente!
+              Você foi convidado para testar nossa plataforma por {linkData?.trial_days || 14} dias!
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleSignUp}>
