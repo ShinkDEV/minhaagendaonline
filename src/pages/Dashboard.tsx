@@ -8,7 +8,7 @@ import { useAppointments } from '@/hooks/useAppointments';
 import { useCommissions } from '@/hooks/useCommissions';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format, differenceInDays } from 'date-fns';
+import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AnnouncementBanner } from '@/components/announcements/AnnouncementBanner';
 import { RevenueChart } from '@/components/dashboard/RevenueChart';
@@ -19,7 +19,7 @@ import { ClientRankingCard } from '@/components/dashboard/ClientRankingCard';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Dashboard() {
-  const { profile, salon, salonPlan, isAdmin, isSuperAdmin, user } = useAuth();
+  const { profile, salon, salonPlan, isAdmin, isSuperAdmin, user, trialCancelled, trialExpired, trialDaysRemaining } = useAuth();
   const navigate = useNavigate();
   const today = new Date();
   
@@ -57,27 +57,6 @@ export default function Dashboard() {
     },
     enabled: !!user?.email,
   });
-
-  // Check user's active trial with days remaining
-  const { data: activeTrial } = useQuery({
-    queryKey: ['active-trial', user?.email],
-    queryFn: async () => {
-      if (!user?.email) return null;
-      const { data } = await supabase
-        .from('free_trial_users')
-        .select('created_at, trial_days')
-        .eq('email', user.email)
-        .is('cancelled_at', null)
-        .maybeSingle();
-      return data;
-    },
-    enabled: !!user?.email,
-  });
-
-  // Calculate days remaining for trial
-  const trialDaysRemaining = activeTrial && activeTrial.trial_days 
-    ? Math.max(0, activeTrial.trial_days - differenceInDays(new Date(), new Date(activeTrial.created_at)))
-    : null;
 
   // Filter appointments for professional view
   const filteredAppointments = isAdmin 
@@ -155,8 +134,26 @@ export default function Dashboard() {
   return (
     <AppLayout>
       <div className="space-y-4 md:space-y-6 overflow-x-hidden w-full max-w-full">
+        {/* Trial Expired Warning */}
+        {trialExpired && (
+          <Alert variant="destructive">
+            <XCircle className="h-4 w-4" />
+            <AlertTitle>Seu período de teste expirou</AlertTitle>
+            <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span>Seu teste gratuito terminou. Para continuar usando, escolha um plano.</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/upgrade')}
+              >
+                Ver planos
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Trial Cancelled Warning */}
-        {cancelledTrial && (
+        {cancelledTrial && !trialExpired && (
           <Alert variant="destructive">
             <XCircle className="h-4 w-4" />
             <AlertTitle>Seu teste gratuito foi encerrado</AlertTitle>
@@ -202,16 +199,16 @@ export default function Dashboard() {
           </Card>
         )}
 
-        {/* Trial days remaining - only for trial users */}
-        {isAdmin && trialDaysRemaining !== null && !salonPlan && (
+        {/* Trial days remaining - only for trial users with limited days */}
+        {isAdmin && trialDaysRemaining !== null && trialDaysRemaining > 0 && !salonPlan && !trialExpired && (
           <Card className={`border-0 shadow-sm ${trialDaysRemaining <= 3 ? 'bg-orange-500/10 border-orange-500/20' : 'bg-green-500/10 border-green-500/20'}`}>
             <CardContent className="p-2.5 md:p-4 flex items-center gap-2 md:gap-3">
               <Gift className={`h-4 w-4 md:h-5 md:w-5 shrink-0 ${trialDaysRemaining <= 3 ? 'text-orange-600' : 'text-green-600'}`} />
               <div className="flex-1 min-w-0">
                 <p className={`text-xs md:text-sm font-medium ${trialDaysRemaining <= 3 ? 'text-orange-600' : 'text-green-600'}`}>
-                  {trialDaysRemaining === 0 
+                  {trialDaysRemaining === 1 
                     ? 'Último dia de teste!' 
-                    : `${trialDaysRemaining} ${trialDaysRemaining === 1 ? 'dia' : 'dias'} restantes de teste`}
+                    : `${trialDaysRemaining} dias restantes de teste`}
                 </p>
                 <p className="text-[10px] md:text-xs text-muted-foreground">
                   {trialDaysRemaining <= 3 

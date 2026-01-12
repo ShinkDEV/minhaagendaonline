@@ -17,6 +17,8 @@ interface AuthContextType {
   isAdmin: boolean;
   isSuperAdmin: boolean;
   trialCancelled: boolean;
+  trialExpired: boolean;
+  trialDaysRemaining: number | null;
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, fullName: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -35,6 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [salonPlan, setSalonPlan] = useState<(SalonPlan & { plan: Plan }) | null>(null);
   const [professionalId, setProfessionalId] = useState<string | null>(null);
   const [trialCancelled, setTrialCancelled] = useState(false);
+  const [trialExpired, setTrialExpired] = useState(false);
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const checkSubscriptionStatus = async () => {
@@ -42,6 +46,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data, error } = await supabase.functions.invoke('check-subscription');
       if (!error && data) {
         setTrialCancelled(data.trial_cancelled === true);
+        setTrialExpired(data.trial_expired === true);
+        setTrialDaysRemaining(data.trial_days_remaining ?? null);
       }
     } catch (error) {
       console.error('Error checking subscription:', error);
@@ -179,7 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   return (
     <AuthContext.Provider value={{ 
-      user, session, profile, salon, userRole, userRoles, salonPlan, professionalId, maxProfessionals, loading, isAdmin, isSuperAdmin, trialCancelled,
+      user, session, profile, salon, userRole, userRoles, salonPlan, professionalId, maxProfessionals, loading, isAdmin, isSuperAdmin, trialCancelled, trialExpired, trialDaysRemaining,
       signIn, signUp, signOut, refreshProfile 
     }}>
       {children}
