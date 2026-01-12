@@ -76,6 +76,7 @@ export default function SuperAdmin() {
   const [newTrialNotes, setNewTrialNotes] = useState('');
   const [isAddingTrial, setIsAddingTrial] = useState(false);
   const [newLinkNotes, setNewLinkNotes] = useState('');
+  const [newLinkDays, setNewLinkDays] = useState('14');
   const [isCreatingLink, setIsCreatingLink] = useState(false);
   const [copiedLinkId, setCopiedLinkId] = useState<string | null>(null);
 
@@ -330,6 +331,12 @@ export default function SuperAdmin() {
   };
 
   const handleCreateInviteLink = async () => {
+    const trialDays = parseInt(newLinkDays);
+    if (isNaN(trialDays) || trialDays < 1 || trialDays > 365) {
+      toast({ variant: 'destructive', title: 'Período inválido', description: 'Informe um número entre 1 e 365 dias' });
+      return;
+    }
+
     setIsCreatingLink(true);
     try {
       // Generate random code
@@ -340,12 +347,14 @@ export default function SuperAdmin() {
         .insert({
           code,
           notes: newLinkNotes.trim() || null,
+          trial_days: trialDays,
         });
 
       if (error) throw error;
 
       toast({ title: 'Link de convite criado!' });
       setNewLinkNotes('');
+      setNewLinkDays('14');
       refetchLinks();
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Erro', description: error.message });
@@ -624,11 +633,28 @@ export default function SuperAdmin() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <Input
-                  placeholder="Notas do link (opcional)"
-                  value={newLinkNotes}
-                  onChange={(e) => setNewLinkNotes(e.target.value)}
-                />
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Input
+                      placeholder="Notas do link (opcional)"
+                      value={newLinkNotes}
+                      onChange={(e) => setNewLinkNotes(e.target.value)}
+                    />
+                  </div>
+                  <div className="w-24">
+                    <Input
+                      type="number"
+                      placeholder="Dias"
+                      value={newLinkDays}
+                      onChange={(e) => setNewLinkDays(e.target.value)}
+                      min={1}
+                      max={365}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Período do trial: {newLinkDays} {parseInt(newLinkDays) === 1 ? 'dia' : 'dias'}
+                </p>
                 <Button 
                   className="w-full" 
                   onClick={handleCreateInviteLink}
@@ -656,11 +682,17 @@ export default function SuperAdmin() {
                               {link.active ? 'Ativo' : 'Inativo'}
                             </Badge>
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                            <Users className="h-3 w-3" />
-                            {link.usage_count} uso(s)
+                          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
+                            <span className="flex items-center gap-1">
+                              <Users className="h-3 w-3" />
+                              {link.usage_count} uso(s)
+                            </span>
+                            <span className="flex items-center gap-1">
+                              <Calendar className="h-3 w-3" />
+                              {link.trial_days} dias
+                            </span>
                             {link.notes && (
-                              <span className="ml-2">• {link.notes}</span>
+                              <span>• {link.notes}</span>
                             )}
                           </div>
                         </div>

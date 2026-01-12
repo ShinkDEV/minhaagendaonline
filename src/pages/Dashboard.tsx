@@ -1,14 +1,14 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, DollarSign, Clock, Plus, TrendingUp, AlertCircle, Crown, XCircle } from 'lucide-react';
+import { Calendar, Users, DollarSign, Clock, Plus, TrendingUp, AlertCircle, Crown, XCircle, Gift } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useAppointments } from '@/hooks/useAppointments';
 import { useCommissions } from '@/hooks/useCommissions';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { AnnouncementBanner } from '@/components/announcements/AnnouncementBanner';
 import { RevenueChart } from '@/components/dashboard/RevenueChart';
@@ -57,6 +57,27 @@ export default function Dashboard() {
     },
     enabled: !!user?.email,
   });
+
+  // Check user's active trial with days remaining
+  const { data: activeTrial } = useQuery({
+    queryKey: ['active-trial', user?.email],
+    queryFn: async () => {
+      if (!user?.email) return null;
+      const { data } = await supabase
+        .from('free_trial_users')
+        .select('created_at, trial_days')
+        .eq('email', user.email)
+        .is('cancelled_at', null)
+        .maybeSingle();
+      return data;
+    },
+    enabled: !!user?.email,
+  });
+
+  // Calculate days remaining for trial
+  const trialDaysRemaining = activeTrial && activeTrial.trial_days 
+    ? Math.max(0, activeTrial.trial_days - differenceInDays(new Date(), new Date(activeTrial.created_at)))
+    : null;
 
   // Filter appointments for professional view
   const filteredAppointments = isAdmin 
@@ -175,6 +196,35 @@ export default function Dashboard() {
                 </p>
               </div>
               <Button variant="outline" size="sm" className="shrink-0 text-xs px-2 md:px-3" onClick={() => navigate('/plans')}>
+                Ver planos
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Trial days remaining - only for trial users */}
+        {isAdmin && trialDaysRemaining !== null && !salonPlan && (
+          <Card className={`border-0 shadow-sm ${trialDaysRemaining <= 3 ? 'bg-orange-500/10 border-orange-500/20' : 'bg-green-500/10 border-green-500/20'}`}>
+            <CardContent className="p-2.5 md:p-4 flex items-center gap-2 md:gap-3">
+              <Gift className={`h-4 w-4 md:h-5 md:w-5 shrink-0 ${trialDaysRemaining <= 3 ? 'text-orange-600' : 'text-green-600'}`} />
+              <div className="flex-1 min-w-0">
+                <p className={`text-xs md:text-sm font-medium ${trialDaysRemaining <= 3 ? 'text-orange-600' : 'text-green-600'}`}>
+                  {trialDaysRemaining === 0 
+                    ? 'Último dia de teste!' 
+                    : `${trialDaysRemaining} ${trialDaysRemaining === 1 ? 'dia' : 'dias'} restantes de teste`}
+                </p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">
+                  {trialDaysRemaining <= 3 
+                    ? 'Escolha um plano para continuar usando' 
+                    : 'Aproveite seu período de teste gratuito'}
+                </p>
+              </div>
+              <Button 
+                variant={trialDaysRemaining <= 3 ? 'default' : 'outline'} 
+                size="sm" 
+                className="shrink-0 text-xs px-2 md:px-3" 
+                onClick={() => navigate('/upgrade')}
+              >
                 Ver planos
               </Button>
             </CardContent>

@@ -498,6 +498,7 @@ export type Database = {
           invite_link_id: string | null
           invited_by: string | null
           notes: string | null
+          trial_days: number | null
           user_id: string | null
         }
         Insert: {
@@ -509,6 +510,7 @@ export type Database = {
           invite_link_id?: string | null
           invited_by?: string | null
           notes?: string | null
+          trial_days?: number | null
           user_id?: string | null
         }
         Update: {
@@ -520,6 +522,7 @@ export type Database = {
           invite_link_id?: string | null
           invited_by?: string | null
           notes?: string | null
+          trial_days?: number | null
           user_id?: string | null
         }
         Relationships: [
@@ -1162,6 +1165,7 @@ export type Database = {
           created_by: string | null
           id: string
           notes: string | null
+          trial_days: number
           usage_count: number
         }
         Insert: {
@@ -1171,6 +1175,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          trial_days?: number
           usage_count?: number
         }
         Update: {
@@ -1180,6 +1185,7 @@ export type Database = {
           created_by?: string | null
           id?: string
           notes?: string | null
+          trial_days?: number
           usage_count?: number
         }
         Relationships: []
