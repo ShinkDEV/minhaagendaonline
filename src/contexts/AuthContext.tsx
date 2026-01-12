@@ -193,7 +193,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+    if (error) {
+      console.error('Error signing out:', error);
+      throw error;
+    }
+    setUser(null);
+    setSession(null);
     setProfile(null);
     setSalon(null);
     setUserRole(null);
@@ -201,6 +207,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSalonPlan(null);
     setProfessionalId(null);
     setTrialCancelled(false);
+    setTrialExpired(false);
+    setTrialDaysRemaining(null);
   };
 
   const isSuperAdmin = userRoles.some(r => r.role === 'super_admin');
