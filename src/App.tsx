@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { TrialExpiredGuard } from "@/components/TrialExpiredGuard";
 
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
@@ -110,44 +111,46 @@ function AppRoutes() {
 
   // Routes for salon users (admins and professionals)
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/site" element={<LandingPage />} />
-      <Route path="/terms" element={<Terms />} />
-      <Route path="/privacy" element={<Privacy />} />
-      <Route path="/reset-password" element={<ResetPassword />} />
-      
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/login" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/agenda" element={<Agenda />} />
-      <Route path="/appointments/:id" element={<AppointmentDetail />} />
-      
-      {/* Professional routes */}
-      <Route path="/my-commissions" element={<MyCommissions />} />
-      <Route path="/invite/:token" element={<AcceptInvite />} />
-      <Route path="/profile" element={<Profile />} />
-      
-      {/* Shared routes - professionals can also create appointments */}
-      <Route path="/appointments/new" element={<NewAppointment />} />
-      
-      {/* Admin-only routes */}
-      <Route path="/clients" element={<AdminRoute><Clientes /></AdminRoute>} />
-      <Route path="/clients/:id" element={<AdminRoute><ClientDetail /></AdminRoute>} />
-      <Route path="/clientes" element={<Navigate to="/clients" replace />} />
-      <Route path="/services" element={<AdminRoute><Servicos /></AdminRoute>} />
-      <Route path="/servicos" element={<Navigate to="/services" replace />} />
-      <Route path="/professionals" element={<AdminRoute><Profissionais /></AdminRoute>} />
-      <Route path="/financial" element={<AdminRoute><Financeiro /></AdminRoute>} />
-      <Route path="/stock" element={<AdminRoute><Estoque /></AdminRoute>} />
-      <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
-      <Route path="/commissions" element={<AdminRoute><CommissionsReport /></AdminRoute>} />
-      <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
-      <Route path="/upgrade" element={<AdminRoute><Upgrade /></AdminRoute>} />
-      <Route path="/report-error" element={<ReportError />} />
-      
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <TrialExpiredGuard>
+      <Routes>
+        {/* Public routes */}
+        <Route path="/site" element={<LandingPage />} />
+        <Route path="/terms" element={<Terms />} />
+        <Route path="/privacy" element={<Privacy />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        
+        <Route path="/" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/agenda" element={<Agenda />} />
+        <Route path="/appointments/:id" element={<AppointmentDetail />} />
+        
+        {/* Professional routes */}
+        <Route path="/my-commissions" element={<MyCommissions />} />
+        <Route path="/invite/:token" element={<AcceptInvite />} />
+        <Route path="/profile" element={<Profile />} />
+        
+        {/* Shared routes - professionals can also create appointments */}
+        <Route path="/appointments/new" element={<NewAppointment />} />
+        
+        {/* Admin-only routes */}
+        <Route path="/clients" element={<AdminRoute><Clientes /></AdminRoute>} />
+        <Route path="/clients/:id" element={<AdminRoute><ClientDetail /></AdminRoute>} />
+        <Route path="/clientes" element={<Navigate to="/clients" replace />} />
+        <Route path="/services" element={<AdminRoute><Servicos /></AdminRoute>} />
+        <Route path="/servicos" element={<Navigate to="/services" replace />} />
+        <Route path="/professionals" element={<AdminRoute><Profissionais /></AdminRoute>} />
+        <Route path="/financial" element={<AdminRoute><Financeiro /></AdminRoute>} />
+        <Route path="/stock" element={<AdminRoute><Estoque /></AdminRoute>} />
+        <Route path="/reports" element={<AdminRoute><Reports /></AdminRoute>} />
+        <Route path="/commissions" element={<AdminRoute><CommissionsReport /></AdminRoute>} />
+        <Route path="/settings" element={<AdminRoute><Settings /></AdminRoute>} />
+        <Route path="/upgrade" element={<Upgrade />} />
+        <Route path="/report-error" element={<ReportError />} />
+        
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </TrialExpiredGuard>
   );
 }
 
