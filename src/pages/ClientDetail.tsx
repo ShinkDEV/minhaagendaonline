@@ -2,7 +2,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { ClientAvatarUpload } from '@/components/ClientAvatarUpload';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Phone, Mail, Calendar, DollarSign, TrendingUp, Clock, Star } from 'lucide-react';
@@ -74,11 +74,13 @@ export default function ClientDetail() {
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                <AvatarFallback className="bg-primary/10 text-primary text-xl font-semibold">
-                  {getInitials(client.full_name)}
-                </AvatarFallback>
-              </Avatar>
+              <ClientAvatarUpload
+                clientId={client.id}
+                clientName={client.full_name}
+                avatarUrl={client.avatar_url}
+                size="lg"
+                editable
+              />
               <div className="flex-1">
                 <h2 className="text-lg font-semibold">{client.full_name}</h2>
                 {client.phone && (

@@ -3,7 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Label } from '@/components/ui/label';
 import { Search, Plus, ChevronRight, Calendar } from 'lucide-react';
@@ -86,6 +86,9 @@ export default function Clientes() {
                 <CardContent className="p-4">
                   <div className="flex items-center gap-3">
                     <Avatar className="h-12 w-12">
+                      {client.avatar_url && (
+                        <AvatarImage src={client.avatar_url} alt={client.full_name} />
+                      )}
                       <AvatarFallback className="bg-primary/10 text-primary font-semibold">
                         {getInitials(client.full_name)}
                       </AvatarFallback>
