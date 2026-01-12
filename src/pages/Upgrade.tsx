@@ -3,7 +3,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Check, Crown, Loader2, Sparkles, Users, Zap } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Check, Crown, Loader2, Sparkles, Users, Zap, AlertTriangle } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
@@ -95,9 +96,11 @@ const plans = [
 ];
 
 export default function Upgrade() {
-  const { user } = useAuth();
+  const { user, trialExpired, trialCancelled, salonPlan } = useAuth();
   const { toast } = useToast();
   const [loadingPlan, setLoadingPlan] = useState<string | null>(null);
+  
+  const isBlocked = (trialExpired || trialCancelled) && !salonPlan;
 
   // Check current subscription status
   const { data: subscription, isLoading: isLoadingSubscription, refetch } = useQuery({
@@ -175,6 +178,21 @@ export default function Upgrade() {
   return (
     <AppLayout>
       <div className="space-y-6">
+        {/* Trial Expired/Cancelled Warning */}
+        {isBlocked && (
+          <Alert variant="destructive" className="border-destructive">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertTitle>
+              {trialExpired ? 'Seu período de teste expirou' : 'Seu teste gratuito foi cancelado'}
+            </AlertTitle>
+            <AlertDescription>
+              {trialExpired 
+                ? 'Seu teste gratuito terminou. Para continuar usando a plataforma, escolha um plano abaixo.'
+                : 'Seu período de teste foi cancelado. Para continuar usando a plataforma, escolha um plano abaixo.'}
+            </AlertDescription>
+          </Alert>
+        )}
+
         <div className="text-center space-y-2">
           <h1 className="text-2xl font-bold">Planos</h1>
           <p className="text-muted-foreground">
