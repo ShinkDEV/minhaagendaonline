@@ -91,7 +91,69 @@ serve(async (req) => {
         });
       }
 
-      logStep("User has free trial - granting Basic plan access", { email: user.email });
+      // Check if trial has expired based on trial_days
+      if (freeTrial.trial_days && freeTrial.created_at) {
+        const createdAt = new Date(freeTrial.created_at);
+        const expiresAt = new Date(createdAt.getTime() + (freeTrial.trial_days * 24 * 60 * 60 * 1000));
+        const now = new Date();
+        
+        if (now > expiresAt) {
+          logStep("User's free trial has expired", { 
+            email: user.email, 
+            trial_days: freeTrial.trial_days,
+            created_at: freeTrial.created_at,
+            expired_at: expiresAt.toISOString()
+          });
+          return new Response(JSON.stringify({
+            subscribed: false,
+            plan_code: 'free',
+            plan_name: 'Plano Gratuito',
+            max_professionals: 1,
+            subscription_end: null,
+            trial_expired: true,
+            trial_expired_at: expiresAt.toISOString(),
+          }), {
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 200,
+          });
+        }
+        
+        // Calculate remaining days for response
+        const remainingMs = expiresAt.getTime() - now.getTime();
+        const remainingDays = Math.ceil(remainingMs / (24 * 60 * 60 * 1000));
+        
+        logStep("User has free trial with limited days", { 
+          email: user.email, 
+          trial_days: freeTrial.trial_days,
+          remaining_days: remainingDays 
+        });
+        
+        // Update free trial with user_id and activated_at if not already set
+        if (!freeTrial.user_id || !freeTrial.activated_at) {
+          await supabaseClient
+            .from('free_trial_users')
+            .update({ 
+              user_id: user.id, 
+              activated_at: freeTrial.activated_at || new Date().toISOString() 
+            })
+            .eq('id', freeTrial.id);
+        }
+
+        return new Response(JSON.stringify({
+          subscribed: true,
+          is_free_trial: true,
+          plan_code: 'basic',
+          plan_name: 'Teste Gratuito (Básico)',
+          max_professionals: 2,
+          subscription_end: expiresAt.toISOString(),
+          trial_days_remaining: remainingDays,
+        }), {
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+          status: 200,
+        });
+      }
+
+      logStep("User has unlimited free trial - granting Basic plan access", { email: user.email });
       
       // Update free trial with user_id and activated_at if not already set
       if (!freeTrial.user_id || !freeTrial.activated_at) {
@@ -104,14 +166,14 @@ serve(async (req) => {
           .eq('id', freeTrial.id);
       }
 
-      // Trial is on Basic plan (1-2 professionals)
+      // Unlimited trial is on Basic plan (1-2 professionals)
       return new Response(JSON.stringify({
         subscribed: true,
         is_free_trial: true,
         plan_code: 'basic',
         plan_name: 'Teste Gratuito (Básico)',
         max_professionals: 2,
-        subscription_end: null, // No expiration
+        subscription_end: null, // No expiration for unlimited trials
       }), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
         status: 200,
