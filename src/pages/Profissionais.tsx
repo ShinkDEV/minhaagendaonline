@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { useProfessionals, useCreateProfessional, useUpdateProfessional } from '@/hooks/useProfessionals';
+import { useCreateInvitation } from '@/hooks/useInvitations';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Progress } from '@/components/ui/progress';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, User, CreditCard, Shield, Mail, Percent, Building2, KeyRound, Users, AlertCircle } from 'lucide-react';
+import { Plus, User, CreditCard, Shield, Mail, Percent, Building2, KeyRound, Users, AlertCircle, Loader2 } from 'lucide-react';
 import { Professional } from '@/types/database';
 
 const formatCpf = (value: string) => {
@@ -32,6 +33,7 @@ export default function Profissionais() {
   const { data: professionals = [], isLoading } = useProfessionals(true);
   const createProfessional = useCreateProfessional();
   const updateProfessional = useUpdateProfessional();
+  const createInvitation = useCreateInvitation();
 
   const [isSheetOpen, setIsSheetOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState<Professional | null>(null);
@@ -50,6 +52,8 @@ export default function Profissionais() {
   const [pixKeyType, setPixKeyType] = useState('');
   const [canDeleteAppointments, setCanDeleteAppointments] = useState(false);
   const [isActive, setIsActive] = useState(true);
+  const [email, setEmail] = useState('');
+  const [sendInvite, setSendInvite] = useState(true);
 
   const resetForm = () => {
     setDisplayName('');
@@ -65,6 +69,8 @@ export default function Profissionais() {
     setCanDeleteAppointments(false);
     setIsActive(true);
     setActiveTab('info');
+    setEmail('');
+    setSendInvite(true);
   };
 
   const openNewProfessional = () => {
@@ -97,6 +103,13 @@ export default function Profissionais() {
       return;
     }
 
+    // Validate email format if provided
+    const emailTrimmed = email.trim();
+    if (emailTrimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrimmed)) {
+      toast({ title: 'Email inválido', variant: 'destructive' });
+      return;
+    }
+
     try {
       if (selectedProfessional) {
         await updateProfessional.mutateAsync({
@@ -116,11 +129,39 @@ export default function Profissionais() {
         });
         toast({ title: 'Profissional atualizado!' });
       } else {
+        // Create professional with all data
         await createProfessional.mutateAsync({
           display_name: displayName.trim(),
           commission_percent_default: parseFloat(commissionPercent) || 0,
+          legal_name: legalName.trim() || null,
+          cpf: cpf.replace(/\D/g, '') || null,
+          position: position.trim() || null,
+          bank_name: bankName.trim() || null,
+          bank_agency: bankAgency.trim() || null,
+          bank_account: bankAccount.trim() || null,
+          pix_key: pixKey.trim() || null,
+          pix_key_type: pixKeyType || null,
+          can_delete_appointments: canDeleteAppointments,
         });
-        toast({ title: 'Profissional cadastrado!' });
+
+        // Send invitation if email is provided and sendInvite is true
+        if (emailTrimmed && sendInvite) {
+          try {
+            await createInvitation.mutateAsync(emailTrimmed);
+            toast({ 
+              title: 'Profissional cadastrado!', 
+              description: `Convite enviado para ${emailTrimmed}` 
+            });
+          } catch (inviteError: any) {
+            toast({ 
+              title: 'Profissional cadastrado!', 
+              description: `Erro ao enviar convite: ${inviteError.message}. Você pode reenviar depois.`,
+              variant: 'default'
+            });
+          }
+        } else {
+          toast({ title: 'Profissional cadastrado!' });
+        }
       }
       setIsSheetOpen(false);
       resetForm();
@@ -128,6 +169,8 @@ export default function Profissionais() {
       toast({ title: 'Erro ao salvar', description: error.message, variant: 'destructive' });
     }
   };
+
+  const isSaving = createProfessional.isPending || updateProfessional.isPending || createInvitation.isPending;
 
   const activeProfessionals = professionals.filter(p => p.active);
   const inactiveProfessionals = professionals.filter(p => !p.active);
@@ -458,6 +501,48 @@ export default function Profissionais() {
 
             {/* Permissions Tab */}
             <TabsContent value="permissions" className="space-y-4 mt-4">
+              {/* Email and Invite - Only for new professionals */}
+              {!selectedProfessional && (
+                <Card>
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <Mail className="h-4 w-4" />
+                      Acesso ao Sistema
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="email">E-mail do Profissional</Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="email@exemplo.com"
+                      />
+                      <p className="text-xs text-muted-foreground">
+                        O profissional receberá um convite para criar sua conta
+                      </p>
+                    </div>
+
+                    {email.trim() && (
+                      <div className="flex items-center justify-between p-3 border rounded-lg">
+                        <div>
+                          <p className="font-medium text-sm">Enviar convite por e-mail</p>
+                          <p className="text-xs text-muted-foreground">
+                            Enviar automaticamente o convite de acesso
+                          </p>
+                        </div>
+                        <Switch
+                          checked={sendInvite}
+                          onCheckedChange={setSendInvite}
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
               <Card>
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm flex items-center gap-2">
@@ -517,12 +602,16 @@ export default function Profissionais() {
             <Button 
               className="flex-1"
               onClick={handleSave}
-              disabled={createProfessional.isPending || updateProfessional.isPending}
+              disabled={isSaving}
             >
-              {createProfessional.isPending || updateProfessional.isPending
-                ? 'Salvando...'
-                : 'Salvar'
-              }
+              {isSaving ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                'Salvar'
+              )}
             </Button>
           </div>
         </SheetContent>
