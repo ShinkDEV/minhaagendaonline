@@ -10,14 +10,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { ArrowLeft, Clock, User, Scissors, DollarSign, Phone, CheckCircle, XCircle, Package, History } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ArrowLeft, Clock, User, Scissors, DollarSign, Phone, CheckCircle, XCircle, Package, History, Plus, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useToast } from '@/hooks/use-toast';
-import { useAppointment, useUpdateAppointmentStatus } from '@/hooks/useAppointments';
+import { useAppointment, useUpdateAppointmentStatus, useAddAppointmentService, useRemoveAppointmentService } from '@/hooks/useAppointments';
 import { useCompleteAppointment } from '@/hooks/useCommissions';
 import { useServiceCommissions } from '@/hooks/useServiceCommissions';
 import { useAppointmentLogs, formatLogAction } from '@/hooks/useAppointmentLogs';
+import { useActiveServices } from '@/hooks/useServices';
 import { PaymentMethod, CardFeesByInstallment } from '@/types/database';
 import { ProductSelector, SelectedProduct } from '@/components/ProductSelector';
 import { useAuth } from '@/contexts/AuthContext';
@@ -44,15 +46,21 @@ export default function AppointmentDetail() {
   
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
+  const [showAddServiceDialog, setShowAddServiceDialog] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [installments, setInstallments] = useState<number>(1);
   const [cancelReason, setCancelReason] = useState('');
   const [selectedProducts, setSelectedProducts] = useState<SelectedProduct[]>([]);
+  const [selectedServicesToAdd, setSelectedServicesToAdd] = useState<string[]>([]);
+  const [serviceSearch, setServiceSearch] = useState('');
 
   const { data: appointment, isLoading } = useAppointment(id);
   const { data: logs = [] } = useAppointmentLogs(id);
+  const { data: availableServices = [] } = useActiveServices();
   const updateStatus = useUpdateAppointmentStatus();
   const completeAppointment = useCompleteAppointment();
+  const addService = useAddAppointmentService();
+  const removeService = useRemoveAppointmentService();
   const { data: serviceCommissions = [] } = useServiceCommissions(appointment?.professional_id);
 
   // Get fee percentages from salon
@@ -184,6 +192,58 @@ export default function AppointmentDetail() {
     }
   };
 
+  const handleAddServices = async () => {
+    if (selectedServicesToAdd.length === 0) return;
+    
+    try {
+      for (const serviceId of selectedServicesToAdd) {
+        const serviceData = availableServices.find(s => s.id === serviceId);
+        if (serviceData) {
+          await addService.mutateAsync({
+            appointmentId: appointment.id,
+            service: {
+              service_id: serviceId,
+              price_charged: serviceData.price,
+              duration_minutes: serviceData.duration_minutes,
+            },
+          });
+        }
+      }
+      setShowAddServiceDialog(false);
+      setSelectedServicesToAdd([]);
+      setServiceSearch('');
+      toast({ title: 'Serviço(s) adicionado(s) com sucesso!' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    }
+  };
+
+  const handleRemoveService = async (appointmentServiceId: string, priceCharged: number, durationMinutes: number) => {
+    if ((appointment.appointment_services?.length || 0) <= 1) {
+      toast({ variant: 'destructive', title: 'Erro', description: 'O agendamento precisa ter pelo menos um serviço.' });
+      return;
+    }
+    
+    try {
+      await removeService.mutateAsync({
+        appointmentId: appointment.id,
+        appointmentServiceId,
+        priceCharged,
+        durationMinutes,
+      });
+      toast({ title: 'Serviço removido' });
+    } catch (error: any) {
+      toast({ variant: 'destructive', title: 'Erro', description: error.message });
+    }
+  };
+
+  // Filter services that are not already in the appointment
+  const existingServiceIds = new Set(appointment?.appointment_services?.map(as => as.service_id) || []);
+  const filteredServices = availableServices.filter(s => 
+    !existingServiceIds.has(s.id) &&
+    s.name.toLowerCase().includes(serviceSearch.toLowerCase())
+  );
+
   return (
     <AppLayout>
       <div className="space-y-4">
@@ -259,18 +319,51 @@ export default function AppointmentDetail() {
         {/* Services */}
         <Card className="border-0 shadow-sm">
           <CardContent className="p-4">
-            <h3 className="font-semibold mb-3">Serviços</h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold">Serviços</h3>
+              {appointment.status === 'confirmed' && (
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowAddServiceDialog(true)}
+                >
+                  <Plus className="h-4 w-4 mr-1" />
+                  Adicionar
+                </Button>
+              )}
+            </div>
             <div className="space-y-2">
               {appointment.appointment_services?.map((as) => (
                 <div key={as.id} className="flex justify-between items-center">
-                  <div>
+                  <div className="flex-1">
                     <div className="font-medium">{as.service?.name}</div>
                     <div className="text-sm text-muted-foreground">
                       {as.duration_minutes || as.service?.duration_minutes}min
                     </div>
                   </div>
-                  <div className="font-semibold">
-                    R$ {Number(as.price_charged).toFixed(2)}
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold">
+                      R$ {Number(as.price_charged).toFixed(2)}
+                    </span>
+                    {appointment.status === 'confirmed' && (appointment.appointment_services?.length || 0) > 1 && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleRemoveService(
+                          as.id, 
+                          Number(as.price_charged), 
+                          as.duration_minutes || as.service?.duration_minutes || 30
+                        )}
+                        disabled={removeService.isPending}
+                      >
+                        {removeService.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    )}
                   </div>
                 </div>
               ))}
@@ -504,6 +597,95 @@ export default function AppointmentDetail() {
               </Button>
               <Button variant="destructive" onClick={handleCancel} disabled={updateStatus.isPending}>
                 {updateStatus.isPending ? 'Cancelando...' : 'Cancelar Atendimento'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Add Service Dialog */}
+        <Dialog open={showAddServiceDialog} onOpenChange={(open) => {
+          setShowAddServiceDialog(open);
+          if (!open) {
+            setSelectedServicesToAdd([]);
+            setServiceSearch('');
+          }
+        }}>
+          <DialogContent className="max-w-md max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>Adicionar Serviços</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <Input
+                placeholder="Buscar serviço..."
+                value={serviceSearch}
+                onChange={(e) => setServiceSearch(e.target.value)}
+              />
+              <ScrollArea className="h-[300px] pr-4">
+                <div className="space-y-2">
+                  {filteredServices.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      {serviceSearch ? 'Nenhum serviço encontrado' : 'Todos os serviços já foram adicionados'}
+                    </p>
+                  ) : (
+                    filteredServices.map((service) => (
+                      <label
+                        key={service.id}
+                        className="flex items-center gap-3 p-3 rounded-lg border border-border hover:bg-muted/50 cursor-pointer transition-colors"
+                      >
+                        <Checkbox
+                          checked={selectedServicesToAdd.includes(service.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedServicesToAdd(prev => [...prev, service.id]);
+                            } else {
+                              setSelectedServicesToAdd(prev => prev.filter(id => id !== service.id));
+                            }
+                          }}
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">{service.name}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {service.duration_minutes}min
+                          </div>
+                        </div>
+                        <div className="font-semibold">
+                          R$ {service.price.toFixed(2)}
+                        </div>
+                      </label>
+                    ))
+                  )}
+                </div>
+              </ScrollArea>
+              {selectedServicesToAdd.length > 0 && (
+                <div className="bg-muted p-3 rounded-lg">
+                  <div className="flex justify-between text-sm">
+                    <span>{selectedServicesToAdd.length} serviço(s) selecionado(s)</span>
+                    <span className="font-semibold">
+                      + R$ {selectedServicesToAdd
+                        .map(id => availableServices.find(s => s.id === id)?.price || 0)
+                        .reduce((a, b) => a + b, 0)
+                        .toFixed(2)}
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setShowAddServiceDialog(false)}>
+                Cancelar
+              </Button>
+              <Button 
+                onClick={handleAddServices} 
+                disabled={selectedServicesToAdd.length === 0 || addService.isPending}
+              >
+                {addService.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Adicionando...
+                  </>
+                ) : (
+                  'Adicionar'
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>

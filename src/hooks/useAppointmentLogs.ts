@@ -85,6 +85,8 @@ export function formatLogAction(action: string): string {
     status_changed: 'Alterou o status',
     completed: 'Concluiu o atendimento',
     cancelled: 'Cancelou o agendamento',
+    service_added: 'Adicionou um serviço',
+    service_removed: 'Removeu um serviço',
   };
   return actions[action] || action;
 }

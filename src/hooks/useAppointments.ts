@@ -211,3 +211,137 @@ export function useUpdateAppointmentStatus() {
     },
   });
 }
+
+export function useAddAppointmentService() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ 
+      appointmentId, 
+      service 
+    }: { 
+      appointmentId: string; 
+      service: { service_id: string; price_charged: number; duration_minutes: number } 
+    }) => {
+      if (!user?.id) throw new Error('No user');
+
+      // Insert the new service
+      const { error: serviceError } = await supabase
+        .from('appointment_services')
+        .insert({
+          appointment_id: appointmentId,
+          service_id: service.service_id,
+          price_charged: service.price_charged,
+          duration_minutes: service.duration_minutes,
+        });
+      if (serviceError) throw serviceError;
+
+      // Get current appointment to update totals
+      const { data: currentAppointment, error: fetchError } = await supabase
+        .from('appointments')
+        .select('total_amount, end_at')
+        .eq('id', appointmentId)
+        .single();
+      if (fetchError) throw fetchError;
+
+      // Update the appointment total and end time
+      const newTotal = Number(currentAppointment.total_amount || 0) + service.price_charged;
+      const currentEndAt = new Date(currentAppointment.end_at);
+      const newEndAt = new Date(currentEndAt.getTime() + service.duration_minutes * 60000);
+
+      const { error: updateError } = await supabase
+        .from('appointments')
+        .update({ 
+          total_amount: newTotal,
+          end_at: newEndAt.toISOString(),
+        })
+        .eq('id', appointmentId);
+      if (updateError) throw updateError;
+
+      // Log the addition
+      await supabase
+        .from('appointment_logs')
+        .insert({
+          appointment_id: appointmentId,
+          user_id: user.id,
+          action: 'service_added',
+          changes: {
+            service_id: service.service_id,
+            price_charged: service.price_charged,
+          },
+        });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['appointment'] });
+    },
+  });
+}
+
+export function useRemoveAppointmentService() {
+  const queryClient = useQueryClient();
+  const { user } = useAuth();
+
+  return useMutation({
+    mutationFn: async ({ 
+      appointmentId, 
+      appointmentServiceId,
+      priceCharged,
+      durationMinutes,
+    }: { 
+      appointmentId: string; 
+      appointmentServiceId: string;
+      priceCharged: number;
+      durationMinutes: number;
+    }) => {
+      if (!user?.id) throw new Error('No user');
+
+      // Delete the service
+      const { error: deleteError } = await supabase
+        .from('appointment_services')
+        .delete()
+        .eq('id', appointmentServiceId);
+      if (deleteError) throw deleteError;
+
+      // Get current appointment to update totals
+      const { data: currentAppointment, error: fetchError } = await supabase
+        .from('appointments')
+        .select('total_amount, end_at')
+        .eq('id', appointmentId)
+        .single();
+      if (fetchError) throw fetchError;
+
+      // Update the appointment total and end time
+      const newTotal = Math.max(0, Number(currentAppointment.total_amount || 0) - priceCharged);
+      const currentEndAt = new Date(currentAppointment.end_at);
+      const newEndAt = new Date(currentEndAt.getTime() - durationMinutes * 60000);
+
+      const { error: updateError } = await supabase
+        .from('appointments')
+        .update({ 
+          total_amount: newTotal,
+          end_at: newEndAt.toISOString(),
+        })
+        .eq('id', appointmentId);
+      if (updateError) throw updateError;
+
+      // Log the removal
+      await supabase
+        .from('appointment_logs')
+        .insert({
+          appointment_id: appointmentId,
+          user_id: user.id,
+          action: 'service_removed',
+          changes: {
+            appointment_service_id: appointmentServiceId,
+            price_charged: priceCharged,
+          },
+        });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['appointments'] });
+      queryClient.invalidateQueries({ queryKey: ['appointment'] });
+    },
+  });
+}
