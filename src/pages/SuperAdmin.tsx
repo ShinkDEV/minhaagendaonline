@@ -30,7 +30,8 @@ import {
   Loader2,
   Link,
   Copy,
-  Check
+  Check,
+  Mail
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnnouncementManager } from '@/components/announcements/AnnouncementManager';
@@ -160,9 +161,20 @@ export default function SuperAdmin() {
     enabled: isSuperAdmin,
   });
 
+  // Fetch salon owner emails
+  const { data: salonOwners = {} } = useQuery({
+    queryKey: ['salon-owners'],
+    queryFn: async () => {
+      const { data, error } = await supabase.functions.invoke('get-salon-owners');
+      if (error) throw error;
+      return data?.salon_owners || {};
+    },
+    enabled: isSuperAdmin,
+  });
+
   // Fetch all salons with details
   const { data: salons = [], isLoading, refetch } = useQuery({
-    queryKey: ['super-admin-salons'],
+    queryKey: ['super-admin-salons', salonOwners],
     queryFn: async () => {
       // Get all salons
       const { data: salonsData, error: salonsError } = await supabase
@@ -192,6 +204,7 @@ export default function SuperAdmin() {
         const plan = salonPlans?.find(sp => sp.salon_id === salon.id);
         const salonProfessionals = professionals?.filter(p => p.salon_id === salon.id && p.active) || [];
         const owner = profiles?.find(p => p.salon_id === salon.id);
+        const ownerData = salonOwners[salon.id];
         
         return {
           id: salon.id,
@@ -202,8 +215,8 @@ export default function SuperAdmin() {
           professionals_count: salonProfessionals.length,
           plan_name: (plan?.plan as any)?.name || 'Sem plano',
           plan_code: (plan?.plan as any)?.code || null,
-          owner_email: null, // Would need edge function to get
-          owner_name: owner?.full_name || 'Desconhecido',
+          owner_email: ownerData?.email || null,
+          owner_name: ownerData?.name || owner?.full_name || 'Desconhecido',
         };
       });
 
@@ -215,7 +228,8 @@ export default function SuperAdmin() {
   // Filter salons by search
   const filteredSalons = salons.filter(salon => 
     salon.name.toLowerCase().includes(search.toLowerCase()) ||
-    salon.owner_name?.toLowerCase().includes(search.toLowerCase())
+    salon.owner_name?.toLowerCase().includes(search.toLowerCase()) ||
+    salon.owner_email?.toLowerCase().includes(search.toLowerCase())
   );
 
   // Update salon plan
@@ -570,6 +584,12 @@ export default function SuperAdmin() {
                               {salon.plan_name}
                             </Badge>
                           </div>
+                          {salon.owner_email && (
+                            <div className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 truncate">
+                              <Mail className="h-3 w-3 shrink-0" />
+                              <span className="truncate">{salon.owner_email}</span>
+                            </div>
+                          )}
                           <div className="text-sm text-muted-foreground flex items-center gap-2">
                             <Users className="h-3 w-3" />
                             {salon.professionals_count} profissionais
