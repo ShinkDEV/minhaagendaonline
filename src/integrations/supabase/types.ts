@@ -512,6 +512,48 @@ export type Database = {
         }
         Relationships: []
       }
+      faqs: {
+        Row: {
+          active: boolean | null
+          answer: string
+          category: string
+          created_at: string
+          created_by: string | null
+          id: string
+          popular: boolean | null
+          question: string
+          sort_order: number | null
+          tags: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean | null
+          answer: string
+          category: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          popular?: boolean | null
+          question: string
+          sort_order?: number | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean | null
+          answer?: string
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          popular?: boolean | null
+          question?: string
+          sort_order?: number | null
+          tags?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       free_trial_users: {
         Row: {
           activated_at: string | null

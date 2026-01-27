@@ -31,10 +31,13 @@ import {
   Link,
   Copy,
   Check,
-  Mail
+  Mail,
+  HelpCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AnnouncementManager } from '@/components/announcements/AnnouncementManager';
+import { FAQManager } from '@/components/admin/FAQManager';
+import { FAQFeedbackStats } from '@/components/admin/FAQFeedbackStats';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { Ban, RotateCcw } from 'lucide-react';
@@ -513,22 +516,26 @@ export default function SuperAdmin() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="salons" className="flex items-center gap-1 text-xs">
               <Building2 className="h-4 w-4" />
-              Salões
+              <span className="hidden sm:inline">Salões</span>
             </TabsTrigger>
             <TabsTrigger value="trials" className="flex items-center gap-1 text-xs">
               <Gift className="h-4 w-4" />
-              Trials
+              <span className="hidden sm:inline">Trials</span>
             </TabsTrigger>
             <TabsTrigger value="financial" className="flex items-center gap-1 text-xs">
               <TrendingUp className="h-4 w-4" />
-              Financeiro
+              <span className="hidden sm:inline">Financeiro</span>
             </TabsTrigger>
             <TabsTrigger value="announcements" className="flex items-center gap-1 text-xs">
               <Megaphone className="h-4 w-4" />
-              Anúncios
+              <span className="hidden sm:inline">Anúncios</span>
+            </TabsTrigger>
+            <TabsTrigger value="faqs" className="flex items-center gap-1 text-xs">
+              <HelpCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">FAQs</span>
             </TabsTrigger>
           </TabsList>
 
@@ -919,6 +926,12 @@ export default function SuperAdmin() {
           {/* Announcements Tab */}
           <TabsContent value="announcements" className="mt-4">
             <AnnouncementManager />
+          </TabsContent>
+
+          {/* FAQs Tab */}
+          <TabsContent value="faqs" className="space-y-6 mt-4">
+            <FAQFeedbackStats />
+            <FAQManager />
           </TabsContent>
         </Tabs>
       </main>
