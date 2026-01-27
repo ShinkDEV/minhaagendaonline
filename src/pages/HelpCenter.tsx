@@ -64,6 +64,13 @@ function hideCrisp() {
   }
 }
 
+function reopenCrisp() {
+  if (typeof window !== 'undefined' && window.$crisp) {
+    window.$crisp.push(['do', 'chat:show']);
+    window.$crisp.push(['do', 'chat:open']);
+  }
+}
+
 interface FAQItem {
   id: string;
   question: string;
@@ -679,9 +686,13 @@ export default function HelpCenter() {
                     <CheckCircle2 className="h-8 w-8 text-green-500" />
                   </div>
                   <p className="font-medium text-lg">Chat ativo!</p>
-                  <p className="text-sm text-muted-foreground mt-1">
+                  <p className="text-sm text-muted-foreground mt-1 mb-4">
                     Clique no ícone de chat no canto inferior direito da tela
                   </p>
+                  <Button variant="outline" onClick={reopenCrisp}>
+                    <MessageCircle className="mr-2 h-4 w-4" />
+                    Reabrir Chat
+                  </Button>
                 </div>
               ) : (
                 <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-4">
