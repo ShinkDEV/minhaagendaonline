@@ -8,7 +8,10 @@
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+
+    "deploy": "wrangler deploy",
+    "deploy:debug": "WRANGLER_LOG=debug wrangler deploy"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
