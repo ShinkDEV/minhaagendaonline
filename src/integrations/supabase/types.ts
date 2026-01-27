@@ -1367,6 +1367,15 @@ export type Database = {
         Args: { link_id: string }
         Returns: undefined
       }
+      validate_trial_invite_code: {
+        Args: { _code: string }
+        Returns: {
+          active: boolean
+          code: string
+          id: string
+          trial_days: number
+        }[]
+      }
     }
     Enums: {
       app_role: "admin" | "professional" | "super_admin"

@@ -33,18 +33,20 @@ export default function TrialRegister() {
     }
 
     try {
+      // Use secure RPC function to validate code without exposing all codes
       const { data, error } = await supabase
-        .from('trial_invite_links')
-        .select('id, notes, active, trial_days')
-        .eq('code', code.toUpperCase())
-        .eq('active', true)
-        .maybeSingle();
+        .rpc('validate_trial_invite_code', { _code: code.toUpperCase() });
 
       if (error) throw error;
 
-      if (data) {
+      if (data && data.length > 0) {
+        const linkInfo = data[0];
         setLinkValid(true);
-        setLinkData(data);
+        setLinkData({
+          id: linkInfo.id,
+          notes: null,
+          trial_days: linkInfo.trial_days
+        });
       }
     } catch (error) {
       console.error('Error validating link:', error);
