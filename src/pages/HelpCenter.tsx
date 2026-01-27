@@ -5,6 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { FAQFeedback } from '@/components/FAQFeedback';
 import { supabase } from '@/integrations/supabase/client';
 import { useQuery } from '@tanstack/react-query';
 import { format } from 'date-fns';
@@ -730,6 +731,7 @@ export default function HelpCenter() {
                               </Badge>
                             ))}
                           </div>
+                          <FAQFeedback faqId={faq.id} />
                         </AccordionContent>
                       </AccordionItem>
                     ))}

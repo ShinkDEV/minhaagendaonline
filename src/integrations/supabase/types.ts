@@ -488,6 +488,30 @@ export type Database = {
           },
         ]
       }
+      faq_feedback: {
+        Row: {
+          created_at: string
+          faq_id: string
+          id: string
+          is_helpful: boolean
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          faq_id: string
+          id?: string
+          is_helpful: boolean
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          faq_id?: string
+          id?: string
+          is_helpful?: boolean
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       free_trial_users: {
         Row: {
           activated_at: string | null
