@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -298,25 +299,35 @@ export default function HelpCenter() {
   );
 
   const renderAnswer = (answer: string) => {
+    // Configure DOMPurify to only allow safe formatting tags
+    const sanitizeConfig = {
+      ALLOWED_TAGS: ['strong', 'em', 'b', 'i'],
+      ALLOWED_ATTR: []
+    };
+
     return answer.split('\n').map((line, index) => {
-      // Handle bold text
+      // Handle bold text with markdown syntax
       const formattedLine = line.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      // Sanitize the formatted content to prevent XSS
+      const sanitizedContent = DOMPurify.sanitize(formattedLine, sanitizeConfig);
       
       if (line.startsWith('- ')) {
+        const sanitizedListItem = DOMPurify.sanitize(formattedLine.slice(2), sanitizeConfig);
         return (
-          <li key={index} className="ml-4 list-disc" dangerouslySetInnerHTML={{ __html: formattedLine.slice(2) }} />
+          <li key={index} className="ml-4 list-disc" dangerouslySetInnerHTML={{ __html: sanitizedListItem }} />
         );
       }
       if (/^\d+\./.test(line)) {
+        const sanitizedNumberedItem = DOMPurify.sanitize(formattedLine.replace(/^\d+\.\s*/, ''), sanitizeConfig);
         return (
-          <li key={index} className="ml-4 list-decimal" dangerouslySetInnerHTML={{ __html: formattedLine.replace(/^\d+\.\s*/, '') }} />
+          <li key={index} className="ml-4 list-decimal" dangerouslySetInnerHTML={{ __html: sanitizedNumberedItem }} />
         );
       }
       if (line.trim() === '') {
         return <br key={index} />;
       }
       return (
-        <p key={index} className="mb-1" dangerouslySetInnerHTML={{ __html: formattedLine }} />
+        <p key={index} className="mb-1" dangerouslySetInnerHTML={{ __html: sanitizedContent }} />
       );
     });
   };
