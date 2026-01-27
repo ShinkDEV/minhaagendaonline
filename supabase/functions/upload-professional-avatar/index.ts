@@ -116,6 +116,12 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Create admin client to bypass RLS for the update (after validation)
+    const supabaseAdmin = createClient(
+      Deno.env.get('SUPABASE_URL')!,
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
+    );
+
     // Initialize R2 client using aws4fetch
     const r2 = new AwsClient({
       accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
@@ -164,8 +170,8 @@ Deno.serve(async (req) => {
 
     const avatarUrl = `${publicUrl}/${key}`;
 
-    // Update professional record
-    const { error: updateError } = await supabase
+    // Update professional record using admin client (bypasses RLS after validation)
+    const { error: updateError } = await supabaseAdmin
       .from('professionals')
       .update({ avatar_url: avatarUrl })
       .eq('id', professionalId);
