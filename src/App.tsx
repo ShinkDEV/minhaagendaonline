@@ -26,6 +26,7 @@ import Profile from "./pages/Profile";
 import Upgrade from "./pages/Upgrade";
 import TrialRegister from "./pages/TrialRegister";
 import NotFound from "./pages/NotFound";
+import HelpCenter from "./pages/HelpCenter";
 import LandingPage from "./pages/LandingPage";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
@@ -65,6 +66,7 @@ function AppRoutes() {
         <Route path="/payment-success" element={<PaymentSuccess />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/help" element={<HelpCenter />} />
         <Route path="/invite/:token" element={<AcceptInvite />} />
         <Route path="/trial-register/:code" element={<TrialRegister />} />
         <Route path="*" element={<Navigate to="/" replace />} />
@@ -81,6 +83,7 @@ function AppRoutes() {
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
         <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/help" element={<HelpCenter />} />
         
         <Route path="/super-admin" element={<SuperAdmin />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -115,6 +118,7 @@ function AppRoutes() {
         <Route path="/site" element={<LandingPage />} />
         <Route path="/terms" element={<Terms />} />
         <Route path="/privacy" element={<Privacy />} />
+        <Route path="/help" element={<HelpCenter />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         
         <Route path="/" element={<Navigate to="/dashboard" replace />} />

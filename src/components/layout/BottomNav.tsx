@@ -1,4 +1,4 @@
-import { Calendar, Users, LayoutDashboard, Settings, DollarSign, Wallet, BarChart3 } from 'lucide-react';
+import { Calendar, Users, LayoutDashboard, Settings, DollarSign, Wallet, BarChart3, HelpCircle } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
