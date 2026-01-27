@@ -58,15 +58,12 @@ export default function Dashboard() {
     enabled: !!user?.email,
   });
 
-  // Filter appointments for professional view
-  const filteredAppointments = isAdmin 
-    ? todayAppointments 
-    : todayAppointments.filter(a => a.professional_id === myProfessional?.id);
+  // RLS already filters appointments for professionals, so we use the data directly
+  // For admins, all appointments are returned; for professionals, only their own
+  const filteredAppointments = todayAppointments;
 
-  // Filter commissions for professional view
-  const filteredCommissions = isAdmin 
-    ? pendingCommissions 
-    : pendingCommissions.filter(c => c.professional_id === myProfessional?.id);
+  // RLS already filters commissions for professionals, so we use the data directly
+  const filteredCommissions = pendingCommissions;
 
   const confirmedToday = filteredAppointments.filter(a => a.status === 'confirmed');
   const completedToday = filteredAppointments.filter(a => a.status === 'completed');
