@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   Search, 
   Calendar, 
@@ -18,13 +19,50 @@ import {
   BookOpen,
   Lightbulb,
   ChevronRight,
-  ExternalLink,
   Clock,
   CheckCircle2,
   AlertCircle,
-  Sparkles
+  Sparkles,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+
+// Declare Crisp on window
+declare global {
+  interface Window {
+    $crisp: any[];
+    CRISP_WEBSITE_ID: string;
+  }
+}
+
+function initCrisp(websiteId: string) {
+  if (typeof window !== 'undefined' && websiteId) {
+    if (window.$crisp) {
+      window.$crisp.push(['do', 'chat:show']);
+      window.$crisp.push(['do', 'chat:open']);
+      return;
+    }
+
+    window.$crisp = [];
+    window.CRISP_WEBSITE_ID = websiteId;
+
+    const script = document.createElement('script');
+    script.src = 'https://client.crisp.chat/l.js';
+    script.async = true;
+    script.onload = () => {
+      if (window.$crisp) {
+        window.$crisp.push(['do', 'chat:open']);
+      }
+    };
+    document.head.appendChild(script);
+  }
+}
+
+function hideCrisp() {
+  if (typeof window !== 'undefined' && window.$crisp) {
+    window.$crisp.push(['do', 'chat:hide']);
+  }
+}
 
 interface FAQItem {
   id: string;
@@ -258,7 +296,7 @@ const faqItems: FAQItem[] = [
   {
     id: '20',
     question: 'Como entrar em contato com o suporte?',
-    answer: 'Estamos aqui para ajudar! 💬\n\n**Via Chat:**\n1. Vá em **Configurações**\n2. Clique na aba **"Suporte"**\n3. Use o chat para falar conosco em tempo real\n\n**Horário de atendimento:**\n- Segunda a Sexta: 9h às 18h\n- Sábado: 9h às 13h\n\n⏱️ Tempo médio de resposta: menos de 5 minutos!',
+    answer: 'Estamos aqui para ajudar! 💬\n\n**Via Chat:**\n1. Vá em **Central de Ajuda**\n2. Clique em **"Abrir Chat de Suporte"**\n3. Fale conosco em tempo real\n\n**Horário de atendimento:**\n- Segunda a Sexta: 9h às 18h\n- Sábado: 9h às 13h\n\n⏱️ Tempo médio de resposta: menos de 5 minutos!',
     category: 'settings',
     tags: ['suporte', 'ajuda', 'contato'],
     popular: true
@@ -283,12 +321,6 @@ const quickActions = [
     description: 'Confira os horários',
     icon: Clock,
     link: '/agenda'
-  },
-  {
-    title: 'Falar com Suporte',
-    description: 'Chat em tempo real',
-    icon: MessageCircle,
-    link: '/settings'
   }
 ];
 
@@ -296,6 +328,40 @@ export default function HelpCenter() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [expandedItems, setExpandedItems] = useState<string[]>([]);
+
+  // Crisp support
+  const [crispLoading, setCrispLoading] = useState(false);
+  const [crispError, setCrispError] = useState<string | null>(null);
+  const [crispActive, setCrispActive] = useState(false);
+
+  const loadCrispChat = async () => {
+    if (crispActive) return;
+    setCrispLoading(true);
+    setCrispError(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('get-crisp-config');
+      if (error) {
+        setCrispError('Erro ao carregar o chat de suporte');
+        return;
+      }
+      if (data?.websiteId) {
+        initCrisp(data.websiteId);
+        setCrispActive(true);
+      } else {
+        setCrispError('Configuração do chat não encontrada');
+      }
+    } catch {
+      setCrispError('Erro ao inicializar o chat');
+    } finally {
+      setCrispLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      hideCrisp();
+    };
+  }, []);
 
   const filteredFAQs = useMemo(() => {
     let items = faqItems;
@@ -582,25 +648,55 @@ export default function HelpCenter() {
             </div>
           )}
 
-          {/* Contact Support Banner */}
+          {/* Contact Support Section */}
           <Card className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border-primary/20">
-            <CardContent className="flex flex-col md:flex-row items-center justify-between gap-6 py-8">
-              <div className="flex items-center gap-4">
-                <div className="p-4 rounded-full bg-primary/10">
-                  <MessageCircle className="h-8 w-8 text-primary" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <MessageCircle className="h-5 w-5" />
+                Chat de Suporte
+              </CardTitle>
+              <CardDescription>
+                Não encontrou o que procurava? Fale conosco em tempo real!
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {crispLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="ml-3 text-muted-foreground">Carregando chat...</span>
                 </div>
-                <div>
-                  <h3 className="font-semibold text-lg">Não encontrou o que procurava?</h3>
-                  <p className="text-muted-foreground">Nossa equipe está pronta para ajudar via chat em tempo real</p>
+              ) : crispError ? (
+                <div className="text-center py-8">
+                  <MessageCircle className="h-12 w-12 mx-auto mb-4 text-destructive opacity-50" />
+                  <p className="text-destructive mb-4">{crispError}</p>
+                  <Button variant="outline" onClick={loadCrispChat}>
+                    Tentar novamente
+                  </Button>
                 </div>
-              </div>
-              <Button size="lg" className="shrink-0" asChild>
-                <a href="/settings">
-                  <MessageCircle className="mr-2 h-5 w-5" />
-                  Falar com Suporte
-                  <ExternalLink className="ml-2 h-4 w-4" />
-                </a>
-              </Button>
+              ) : crispActive ? (
+                <div className="text-center py-8">
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-green-500/10 mb-4">
+                    <CheckCircle2 className="h-8 w-8 text-green-500" />
+                  </div>
+                  <p className="font-medium text-lg">Chat ativo!</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Clique no ícone de chat no canto inferior direito da tela
+                  </p>
+                </div>
+              ) : (
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 py-4">
+                  <div className="text-center md:text-left">
+                    <p className="font-medium">Precisa de ajuda personalizada?</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Nossa equipe está disponível para tirar suas dúvidas
+                    </p>
+                  </div>
+                  <Button size="lg" onClick={loadCrispChat}>
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    Abrir Chat de Suporte
+                  </Button>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>
