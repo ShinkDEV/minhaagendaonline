@@ -1,5 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { S3Client, PutObjectCommand, DeleteObjectCommand } from "https://esm.sh/@aws-sdk/client-s3@3.450.0";
+import { AwsClient } from "https://esm.sh/aws4fetch@1.0.18";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -8,17 +8,6 @@ const corsHeaders = {
 
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_SIZE = 5 * 1024 * 1024; // 5MB
-
-const getS3Client = () => {
-  return new S3Client({
-    region: "auto",
-    endpoint: `https://${Deno.env.get("R2_ACCOUNT_ID")}.r2.cloudflarestorage.com`,
-    credentials: {
-      accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
-      secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
-    },
-  });
-};
 
 const getExtension = (contentType: string): string => {
   const map: Record<string, string> = {
@@ -113,18 +102,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    const s3 = getS3Client();
+    // Initialize R2 client using aws4fetch
+    const r2 = new AwsClient({
+      accessKeyId: Deno.env.get("R2_ACCESS_KEY_ID")!,
+      secretAccessKey: Deno.env.get("R2_SECRET_ACCESS_KEY")!,
+    });
+
     const bucketName = Deno.env.get("R2_BUCKET_NAME")!;
+    const accountId = Deno.env.get("R2_ACCOUNT_ID")!;
     const publicUrl = Deno.env.get("R2_PUBLIC_URL")!;
+    const r2Endpoint = `https://${accountId}.r2.cloudflarestorage.com`;
 
     // Delete old avatar if exists
     if (client.avatar_url) {
       try {
         const oldKey = client.avatar_url.replace(`${publicUrl}/`, '');
-        await s3.send(new DeleteObjectCommand({
-          Bucket: bucketName,
-          Key: oldKey,
-        }));
+        const deleteUrl = `${r2Endpoint}/${bucketName}/${oldKey}`;
+        await r2.fetch(deleteUrl, { method: 'DELETE' });
+        console.log('Deleted old avatar:', oldKey);
       } catch (e) {
         console.log('Failed to delete old avatar:', e);
       }
@@ -135,12 +130,23 @@ Deno.serve(async (req) => {
     const key = `avatars/${clientId}/${crypto.randomUUID()}.${ext}`;
     const arrayBuffer = await file.arrayBuffer();
 
-    await s3.send(new PutObjectCommand({
-      Bucket: bucketName,
-      Key: key,
-      Body: new Uint8Array(arrayBuffer),
-      ContentType: file.type,
-    }));
+    const uploadUrl = `${r2Endpoint}/${bucketName}/${key}`;
+    const uploadResponse = await r2.fetch(uploadUrl, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': file.type,
+      },
+      body: new Uint8Array(arrayBuffer),
+    });
+
+    if (!uploadResponse.ok) {
+      const errorText = await uploadResponse.text();
+      console.error('R2 upload failed:', errorText);
+      return new Response(
+        JSON.stringify({ error: 'Failed to upload image to storage' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
     const avatarUrl = `${publicUrl}/${key}`;
 
@@ -156,6 +162,8 @@ Deno.serve(async (req) => {
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    console.log('Avatar uploaded successfully:', avatarUrl);
 
     return new Response(
       JSON.stringify({ url: avatarUrl }),
