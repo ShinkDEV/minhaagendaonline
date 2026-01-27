@@ -16,6 +16,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { CommissionFeeSettings } from '@/components/CommissionFeeSettings';
 import { SalonLogoUpload } from '@/components/SalonLogoUpload';
+import { SalonWorkingHoursManager } from '@/components/SalonWorkingHoursManager';
 
 export default function Settings() {
   const { salon, profile, user, salonPlan, isAdmin, isSuperAdmin, signOut, refreshProfile, maxProfessionals } = useAuth();
@@ -166,6 +167,9 @@ export default function Settings() {
                 )}
               </CardContent>
             </Card>
+
+            {/* Salon Working Hours */}
+            {isAdmin && <SalonWorkingHoursManager />}
 
             {/* Commission Fees Settings */}
             {isAdmin && <CommissionFeeSettings />}
