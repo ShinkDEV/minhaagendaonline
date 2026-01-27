@@ -46,6 +46,7 @@ const CATEGORIES = [
   { id: 'stock', label: 'Estoque' },
   { id: 'professionals', label: 'Profissionais' },
   { id: 'settings', label: 'Configurações' },
+  { id: 'news', label: 'Novidades' },
 ];
 
 export function FAQManager() {
