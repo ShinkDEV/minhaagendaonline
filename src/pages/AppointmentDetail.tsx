@@ -43,7 +43,7 @@ export default function AppointmentDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { salon } = useAuth();
+  const { salon, isAdmin } = useAuth();
   
   const [showCompleteDialog, setShowCompleteDialog] = useState(false);
   const [showCancelDialog, setShowCancelDialog] = useState(false);
@@ -436,13 +436,15 @@ export default function AppointmentDetail() {
               <XCircle className="h-4 w-4 mr-2" />
               Cancelar
             </Button>
-            <Button 
-              className="flex-1"
-              onClick={() => setShowCompleteDialog(true)}
-            >
-              <CheckCircle className="h-4 w-4 mr-2" />
-              Concluir
-            </Button>
+            {isAdmin && (
+              <Button 
+                className="flex-1"
+                onClick={() => setShowCompleteDialog(true)}
+              >
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Concluir
+              </Button>
+            )}
           </div>
         )}
 
