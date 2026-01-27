@@ -15,6 +15,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
 import { CommissionFeeSettings } from '@/components/CommissionFeeSettings';
+import { SalonLogoUpload } from '@/components/SalonLogoUpload';
 
 export default function Settings() {
   const { salon, profile, user, salonPlan, isAdmin, isSuperAdmin, signOut, refreshProfile, maxProfessionals } = useAuth();
@@ -113,6 +114,20 @@ export default function Settings() {
           <TabsContent value="salon" className="space-y-4 mt-4">
             <Card className="border-0 shadow-sm">
               <CardContent className="pt-6 space-y-4">
+                {/* Salon Logo */}
+                <div className="flex flex-col items-center gap-2">
+                  <SalonLogoUpload 
+                    logoUrl={(salon as any)?.logo_url || null}
+                    salonName={salon?.name || 'Salão'}
+                    onUploadSuccess={async () => {
+                      await refreshProfile();
+                    }}
+                  />
+                  <span className="text-sm text-muted-foreground">
+                    {isAdmin ? 'Clique para alterar o logo' : salon?.name}
+                  </span>
+                </div>
+                
                 <div className="space-y-2">
                   <Label>Nome do salão</Label>
                   <Input
