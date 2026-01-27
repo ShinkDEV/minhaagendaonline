@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { ArrowLeft, CalendarIcon, Plus, Search, User } from 'lucide-react';
+import { ArrowLeft, CalendarIcon, Plus, Search, User, AlertCircle } from 'lucide-react';
 import { format, addMinutes, setHours, setMinutes } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { cn } from '@/lib/utils';
@@ -21,6 +21,7 @@ import { useClients, useCreateClient } from '@/hooks/useClients';
 import { useActiveServices } from '@/hooks/useServices';
 import { useCreateAppointment } from '@/hooks/useAppointments';
 import { useTimeBlocks, isTimeSlotBlocked } from '@/hooks/useTimeBlocks';
+import { useSalonWorkingHours, generateTimeSlotsForDate, isSalonOpenOnDate } from '@/hooks/useSalonWorkingHours';
 import { useTrialBlock } from '@/hooks/useTrialBlock';
 import { useAuth } from '@/contexts/AuthContext';
 import { Service } from '@/types/database';
@@ -56,6 +57,7 @@ export default function NewAppointment() {
   const { data: clients = [] } = useClients();
   const { data: services = [] } = useActiveServices();
   const { data: timeBlocks = [] } = useTimeBlocks();
+  const { data: salonWorkingHours = [] } = useSalonWorkingHours();
   const createAppointment = useCreateAppointment();
   const createClient = useCreateClient();
 
@@ -77,29 +79,38 @@ export default function NewAppointment() {
   const discountValue = Math.min(Math.max(parseFloat(discount) || 0, 0), subtotal);
   const totalAmount = subtotal - discountValue;
 
-  const allTimeSlots = Array.from({ length: 24 }, (_, i) => {
-    const hour = Math.floor(i / 2) + 8;
-    const min = (i % 2) * 30;
-    return `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
-  }).filter(t => {
-    const hour = parseInt(t.split(':')[0]);
-    return hour >= 8 && hour < 20;
-  });
+  // Check if salon is open on selected date
+  const isSalonOpen = isSalonOpenOnDate(salonWorkingHours, date);
 
-  // Filter out blocked time slots
+  // Generate time slots based on salon working hours
+  const allTimeSlots = generateTimeSlotsForDate(salonWorkingHours, date, 30);
+
+  // Filter out blocked time slots for selected professional
   const availableTimeSlots = professionalId 
     ? allTimeSlots.filter(slot => !isTimeSlotBlocked(timeBlocks, professionalId, date, slot))
     : allTimeSlots;
 
-  // Reset time when professional or date changes if current time is blocked
+  // Reset time when professional, date, or salon hours change if current time is unavailable
   useEffect(() => {
-    if (professionalId && time && isTimeSlotBlocked(timeBlocks, professionalId, date, time)) {
+    if (!isSalonOpen) {
+      setTime('');
+      return;
+    }
+    
+    const isCurrentTimeBlocked = professionalId && time && isTimeSlotBlocked(timeBlocks, professionalId, date, time);
+    const isCurrentTimeOutsideHours = time && !allTimeSlots.includes(time);
+    
+    if (isCurrentTimeBlocked || isCurrentTimeOutsideHours) {
       const firstAvailable = availableTimeSlots[0];
       if (firstAvailable) {
         setTime(firstAvailable);
+      } else {
+        setTime('');
       }
+    } else if (!time && availableTimeSlots.length > 0) {
+      setTime(availableTimeSlots[0]);
     }
-  }, [professionalId, date, timeBlocks]);
+  }, [professionalId, date, timeBlocks, salonWorkingHours, isSalonOpen]);
 
   const handleServiceToggle = (serviceId: string) => {
     setSelectedServices(prev =>
@@ -132,6 +143,14 @@ export default function NewAppointment() {
   const handleSubmit = async () => {
     if (!professionalId) {
       toast({ variant: 'destructive', title: 'Selecione um profissional' });
+      return;
+    }
+    if (!isSalonOpen) {
+      toast({ variant: 'destructive', title: 'O salão está fechado nesta data' });
+      return;
+    }
+    if (!time) {
+      toast({ variant: 'destructive', title: 'Selecione um horário' });
       return;
     }
     if (selectedServices.length === 0) {
@@ -330,9 +349,9 @@ export default function NewAppointment() {
               </div>
               <div className="space-y-2">
                 <Label>Horário *</Label>
-                <Select value={time} onValueChange={setTime}>
+                <Select value={time} onValueChange={setTime} disabled={!isSalonOpen}>
                   <SelectTrigger>
-                    <SelectValue />
+                    <SelectValue placeholder={!isSalonOpen ? "Fechado" : "Selecione"} />
                   </SelectTrigger>
                   <SelectContent>
                     {availableTimeSlots.length === 0 ? (
@@ -350,6 +369,16 @@ export default function NewAppointment() {
                 </Select>
               </div>
             </div>
+
+            {/* Salon Closed Warning */}
+            {!isSalonOpen && (
+              <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 border border-destructive/20 text-destructive">
+                <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                <span className="text-sm">
+                  O salão está fechado neste dia. Selecione outra data.
+                </span>
+              </div>
+            )}
           </CardContent>
         </Card>
 
