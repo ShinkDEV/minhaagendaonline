@@ -6,6 +6,9 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { supabase } from '@/integrations/supabase/client';
+import { useQuery } from '@tanstack/react-query';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { 
   Search, 
   Calendar, 
@@ -25,7 +28,11 @@ import {
   Sparkles,
   Loader2,
   TrendingUp,
-  Eye
+  Eye,
+  Bell,
+  Info,
+  AlertTriangle,
+  Megaphone
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -343,6 +350,22 @@ export default function HelpCenter() {
   const [crispError, setCrispError] = useState<string | null>(null);
   const [crispActive, setCrispActive] = useState(false);
 
+  // Fetch announcements from database
+  const { data: announcements, isLoading: announcementsLoading } = useQuery({
+    queryKey: ['announcements-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('announcements')
+        .select('*')
+        .eq('active', true)
+        .order('created_at', { ascending: false })
+        .limit(5);
+      
+      if (error) throw error;
+      return data;
+    }
+  });
+
   const loadCrispChat = async () => {
     if (crispActive) return;
     setCrispLoading(true);
@@ -371,6 +394,32 @@ export default function HelpCenter() {
       hideCrisp();
     };
   }, []);
+
+  const getAnnouncementIcon = (type: string) => {
+    switch (type) {
+      case 'warning':
+        return <AlertTriangle className="h-5 w-5 text-amber-500" />;
+      case 'success':
+        return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+      case 'error':
+        return <AlertCircle className="h-5 w-5 text-red-500" />;
+      default:
+        return <Info className="h-5 w-5 text-blue-500" />;
+    }
+  };
+
+  const getAnnouncementBadge = (type: string) => {
+    switch (type) {
+      case 'warning':
+        return <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">Aviso</Badge>;
+      case 'success':
+        return <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">Novidade</Badge>;
+      case 'error':
+        return <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">Importante</Badge>;
+      default:
+        return <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">Info</Badge>;
+    }
+  };
 
   const filteredFAQs = useMemo(() => {
     let items = faqItems;
@@ -633,7 +682,53 @@ export default function HelpCenter() {
             </div>
           )}
 
-          {/* FAQ List */}
+          {/* Atualizações / Announcements */}
+          {!searchQuery && !selectedCategory && (
+            <div className="mb-12">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Megaphone className="h-5 w-5 text-primary" />
+                Atualizações
+              </h2>
+              {announcementsLoading ? (
+                <div className="flex items-center justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : announcements && announcements.length > 0 ? (
+                <div className="space-y-4">
+                  {announcements.map((announcement) => (
+                    <Card key={announcement.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                      <div className="flex items-start gap-4 p-4">
+                        <div className="shrink-0 mt-0.5">
+                          {getAnnouncementIcon(announcement.type)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <h3 className="font-semibold text-sm">{announcement.title}</h3>
+                            {getAnnouncementBadge(announcement.type)}
+                          </div>
+                          <p className="text-sm text-muted-foreground whitespace-pre-wrap">
+                            {announcement.content}
+                          </p>
+                          <div className="flex items-center gap-2 mt-3 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            {format(new Date(announcement.created_at), "d 'de' MMMM 'de' yyyy", { locale: ptBR })}
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              ) : (
+                <Card className="p-8 text-center">
+                  <Bell className="h-10 w-10 text-muted-foreground/50 mx-auto mb-3" />
+                  <p className="text-muted-foreground">Nenhuma atualização no momento</p>
+                  <p className="text-sm text-muted-foreground/70 mt-1">
+                    Novidades e comunicados importantes aparecerão aqui
+                  </p>
+                </Card>
+              )}
+            </div>
+          )}
           {(searchQuery || selectedCategory) && (
             <div className="mb-12">
               <div className="flex items-center justify-between mb-4">
