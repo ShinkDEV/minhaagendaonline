@@ -4,6 +4,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { ImageCropper } from '@/components/ImageCropper';
 
 interface SalonLogoUploadProps {
   logoUrl: string | null;
@@ -13,6 +14,8 @@ interface SalonLogoUploadProps {
 
 export function SalonLogoUpload({ logoUrl, salonName, onUploadSuccess }: SalonLogoUploadProps) {
   const [uploading, setUploading] = useState(false);
+  const [cropperOpen, setCropperOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
   const { isAdmin } = useAuth();
@@ -52,11 +55,26 @@ export function SalonLogoUpload({ logoUrl, salonName, onUploadSuccess }: SalonLo
       return;
     }
 
+    // Convert to data URL and open cropper
+    const reader = new FileReader();
+    reader.onload = () => {
+      setSelectedImage(reader.result as string);
+      setCropperOpen(true);
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handleCropComplete = async (croppedBlob: Blob) => {
     setUploading(true);
 
     try {
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('file', croppedBlob, 'logo.jpg');
 
       const { data: { session } } = await supabase.auth.getSession();
       
@@ -91,48 +109,62 @@ export function SalonLogoUpload({ logoUrl, salonName, onUploadSuccess }: SalonLo
       });
     } finally {
       setUploading(false);
-      // Reset input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
+      setSelectedImage(null);
     }
   };
 
+  const handleCropperClose = () => {
+    setCropperOpen(false);
+    setSelectedImage(null);
+  };
+
   return (
-    <div className="relative inline-block">
-      <Avatar 
-        className={`h-20 w-20 ${isAdmin ? 'cursor-pointer' : ''}`}
-        onClick={handleClick}
-      >
-        <AvatarImage src={logoUrl || undefined} alt={salonName} />
-        <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
-          {getInitials(salonName)}
-        </AvatarFallback>
-      </Avatar>
-      
-      {isAdmin && (
-        <>
-          <div
-            className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1.5 cursor-pointer shadow-md hover:bg-primary/90 transition-colors"
-            onClick={handleClick}
-          >
-            {uploading ? (
-              <Loader2 className="h-3.5 w-3.5 animate-spin" />
-            ) : (
-              <Camera className="h-3.5 w-3.5" />
-            )}
-          </div>
-          
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            className="hidden"
-            onChange={handleFileChange}
-            disabled={uploading}
-          />
-        </>
+    <>
+      <div className="relative inline-block">
+        <Avatar 
+          className={`h-20 w-20 ${isAdmin ? 'cursor-pointer' : ''}`}
+          onClick={handleClick}
+        >
+          <AvatarImage src={logoUrl || undefined} alt={salonName} />
+          <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
+            {getInitials(salonName)}
+          </AvatarFallback>
+        </Avatar>
+        
+        {isAdmin && (
+          <>
+            <div
+              className="absolute bottom-0 right-0 bg-primary text-primary-foreground rounded-full p-1.5 cursor-pointer shadow-md hover:bg-primary/90 transition-colors"
+              onClick={handleClick}
+            >
+              {uploading ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Camera className="h-3.5 w-3.5" />
+              )}
+            </div>
+            
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleFileChange}
+              disabled={uploading}
+            />
+          </>
+        )}
+      </div>
+
+      {selectedImage && (
+        <ImageCropper
+          open={cropperOpen}
+          onClose={handleCropperClose}
+          imageSrc={selectedImage}
+          onCropComplete={handleCropComplete}
+          aspectRatio={1}
+        />
       )}
-    </div>
+    </>
   );
 }
