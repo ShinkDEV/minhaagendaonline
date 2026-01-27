@@ -15,8 +15,16 @@ import { useProfessionals } from '@/hooks/useProfessionals';
 import { useTimeBlocks, TimeBlock } from '@/hooks/useTimeBlocks';
 import { useAuth } from '@/contexts/AuthContext';
 import { Appointment } from '@/types/database';
+import { useSalonWorkingHours, getSalonHoursForDate, SalonWorkingHour } from '@/hooks/useSalonWorkingHours';
 
-const hours = Array.from({ length: 12 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`);
+// Generate hours array based on start and end time
+const generateHoursArray = (startHour: number, endHour: number): string[] => {
+  const hours: string[] = [];
+  for (let h = startHour; h < endHour; h++) {
+    hours.push(`${h.toString().padStart(2, '0')}:00`);
+  }
+  return hours;
+};
 
 // Professional colors palette - vibrant, distinguishable colors
 const professionalColors = [
@@ -56,7 +64,9 @@ function getBlocksForDate(
   blocks: TimeBlock[],
   date: Date,
   professionals: { id: string; display_name: string }[],
-  selectedProfessional: string
+  selectedProfessional: string,
+  gridStartHour: number,
+  gridEndHour: number
 ): BlockPosition[] {
   const result: BlockPosition[] = [];
   const dayOfWeek = getDay(date);
@@ -68,8 +78,8 @@ function getBlocksForDate(
 
   for (const block of filteredBlocks) {
     let applies = false;
-    let startTime: string;
-    let endTime: string;
+    let startTime: string = '';
+    let endTime: string = '';
 
     const blockStart = parseISO(block.start_at);
     const blockEnd = parseISO(block.end_at);
@@ -101,29 +111,30 @@ function getBlocksForDate(
         if (dateStr === blockStartDate) {
           startTime = format(blockStart, 'HH:mm');
         } else {
-          startTime = '08:00';
+          startTime = `${gridStartHour.toString().padStart(2, '0')}:00`;
         }
         if (dateStr === blockEndDate) {
           endTime = format(blockEnd, 'HH:mm');
         } else {
-          endTime = '20:00';
+          endTime = `${gridEndHour.toString().padStart(2, '0')}:00`;
         }
       }
     }
 
-    if (applies) {
-      const [startH, startM] = startTime!.split(':').map(Number);
-      const [endH, endM] = endTime!.split(':').map(Number);
+    if (applies && startTime && endTime) {
+      const [startH, startM] = startTime.split(':').map(Number);
+      const [endH, endM] = endTime.split(':').map(Number);
       
-      const startHour = startH - 8;
-      const endHour = endH - 8;
+      const relativeStartHour = startH - gridStartHour;
+      const relativeEndHour = endH - gridStartHour;
+      const gridHours = gridEndHour - gridStartHour;
       
-      // Only show if within visible hours (8-20)
-      if (endH > 8 && startH < 20) {
-        const clampedStartHour = Math.max(startHour, 0);
-        const clampedEndHour = Math.min(endHour, 12);
-        const clampedStartMin = startHour < 0 ? 0 : startM;
-        const clampedEndMin = endHour > 12 ? 0 : endM;
+      // Only show if within visible hours
+      if (endH > gridStartHour && startH < gridEndHour) {
+        const clampedStartHour = Math.max(relativeStartHour, 0);
+        const clampedEndHour = Math.min(relativeEndHour, gridHours);
+        const clampedStartMin = relativeStartHour < 0 ? 0 : startM;
+        const clampedEndMin = relativeEndHour > gridHours ? 0 : endM;
         
         const top = (clampedStartHour * 60 + clampedStartMin) * (64 / 60);
         const height = Math.max(
@@ -177,11 +188,36 @@ export default function Agenda() {
     selectedProfessional !== 'all' ? selectedProfessional : undefined
   );
   const { data: timeBlocks = [] } = useTimeBlocks();
+  const { data: salonWorkingHours = [] } = useSalonWorkingHours();
+
+  // Get salon hours for the selected date
+  const salonHoursForDate = useMemo(() => {
+    return getSalonHoursForDate(salonWorkingHours, selectedDate);
+  }, [salonWorkingHours, selectedDate]);
+
+  // Calculate grid start and end hours based on salon working hours
+  const { gridStartHour, gridEndHour, hours } = useMemo(() => {
+    let startHour = 8; // default
+    let endHour = 20; // default
+    
+    if (salonHoursForDate) {
+      const [sH] = salonHoursForDate.start_time.split(':').map(Number);
+      const [eH] = salonHoursForDate.end_time.split(':').map(Number);
+      startHour = sH;
+      endHour = eH;
+    }
+    
+    return {
+      gridStartHour: startHour,
+      gridEndHour: endHour,
+      hours: generateHoursArray(startHour, endHour)
+    };
+  }, [salonHoursForDate]);
 
   // Get blocks that apply to the selected date
   const blocksForDate = useMemo(
-    () => getBlocksForDate(timeBlocks, selectedDate, professionals, selectedProfessional),
-    [timeBlocks, selectedDate, professionals, selectedProfessional]
+    () => getBlocksForDate(timeBlocks, selectedDate, professionals, selectedProfessional, gridStartHour, gridEndHour),
+    [timeBlocks, selectedDate, professionals, selectedProfessional, gridStartHour, gridEndHour]
   );
 
   // Cancelled appointments for the day
@@ -193,9 +229,9 @@ export default function Agenda() {
   const getAppointmentPosition = (apt: Appointment) => {
     const start = new Date(apt.start_at);
     const end = new Date(apt.end_at);
-    const startHour = start.getHours() - 8;
+    const startHour = start.getHours() - gridStartHour;
     const startMin = start.getMinutes();
-    const endHour = end.getHours() - 8;
+    const endHour = end.getHours() - gridStartHour;
     const endMin = end.getMinutes();
     
     const top = (startHour * 60 + startMin) * (64 / 60);
