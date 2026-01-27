@@ -528,6 +528,46 @@ export default function HelpCenter() {
             </div>
           )}
 
+          {/* Popular Questions */}
+          {!searchQuery && !selectedCategory && (
+            <div className="mb-12">
+              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <CheckCircle2 className="h-5 w-5 text-green-500" />
+                Perguntas Populares
+              </h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                {popularFAQs.map((faq) => (
+                  <Card 
+                    key={faq.id} 
+                    className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-primary/50"
+                    onClick={() => {
+                      setSelectedCategory(faq.category);
+                      setExpandedItems([faq.id]);
+                    }}
+                  >
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base font-medium flex items-start gap-2">
+                        <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
+                        {faq.question}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p className="text-sm text-muted-foreground line-clamp-2">
+                        {faq.answer.split('\n')[0].replace(/\*\*/g, '')}
+                      </p>
+                      <div className="flex items-center gap-2 mt-3">
+                        <Badge variant="outline" className="text-xs">
+                          {categories.find(c => c.id === faq.category)?.title}
+                        </Badge>
+                        <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Categories */}
           {!searchQuery && (
             <div className="mb-12">
@@ -585,47 +625,6 @@ export default function HelpCenter() {
               )}
             </div>
           )}
-
-          {/* Popular Questions */}
-          {!searchQuery && !selectedCategory && (
-            <div className="mb-12">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-green-500" />
-                Perguntas Populares
-              </h2>
-              <div className="grid md:grid-cols-2 gap-4">
-                {popularFAQs.map((faq) => (
-                  <Card 
-                    key={faq.id} 
-                    className="cursor-pointer hover:shadow-md transition-shadow border-l-4 border-l-primary/50"
-                    onClick={() => {
-                      setSelectedCategory(faq.category);
-                      setExpandedItems([faq.id]);
-                    }}
-                  >
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-base font-medium flex items-start gap-2">
-                        <HelpCircle className="h-5 w-5 text-primary shrink-0 mt-0.5" />
-                        {faq.question}
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground line-clamp-2">
-                        {faq.answer.split('\n')[0].replace(/\*\*/g, '')}
-                      </p>
-                      <div className="flex items-center gap-2 mt-3">
-                        <Badge variant="outline" className="text-xs">
-                          {categories.find(c => c.id === faq.category)?.title}
-                        </Badge>
-                        <ChevronRight className="h-4 w-4 text-muted-foreground ml-auto" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
-
 
           {/* Atualizações / Announcements */}
           {!searchQuery && !selectedCategory && (
