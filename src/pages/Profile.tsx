@@ -3,7 +3,8 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, Building2, Percent, Loader2 } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { LogOut, Building2, Percent, Loader2, MapPin, Phone } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -97,13 +98,34 @@ export default function Profile() {
               Salão
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="font-medium">{salon?.name}</p>
-            {salon?.address && (
-              <p className="text-sm text-muted-foreground">{salon.address}</p>
-            )}
-            {salon?.phone && (
-              <p className="text-sm text-muted-foreground">{salon.phone}</p>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-4">
+              <Avatar className="h-16 w-16">
+                <AvatarImage src={(salon as any)?.logo_url || undefined} alt={salon?.name} />
+                <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
+                  {salon?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'S'}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <p className="font-semibold text-lg">{salon?.name}</p>
+              </div>
+            </div>
+            
+            {(salon?.address || salon?.phone) && (
+              <div className="space-y-2 pt-2 border-t">
+                {salon?.address && (
+                  <div className="flex items-start gap-2 text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                    <span>{salon.address}</span>
+                  </div>
+                )}
+                {salon?.phone && (
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <Phone className="h-4 w-4 flex-shrink-0" />
+                    <span>{salon.phone}</span>
+                  </div>
+                )}
+              </div>
             )}
           </CardContent>
         </Card>
