@@ -155,169 +155,6 @@ const categories: Category[] = [
   }
 ];
 
-const faqItems: FAQItem[] = [
-  // Primeiros Passos
-  {
-    id: '1',
-    question: 'Como começar a usar o Minha Agenda Online?',
-    answer: 'Bem-vindo! Para começar:\n\n1. **Cadastre seus serviços** - Vá em "Serviços" e adicione o que você oferece com preços e duração\n2. **Adicione profissionais** - Em "Profissionais", cadastre sua equipe\n3. **Configure horários** - Defina os horários de trabalho de cada profissional\n4. **Comece a agendar** - Pronto! Vá em "Agenda" e crie seu primeiro agendamento\n\n💡 Dica: Comece simples e vá adicionando mais informações conforme a necessidade.',
-    category: 'getting-started',
-    tags: ['início', 'configuração', 'primeiros passos'],
-    popular: true
-  },
-  {
-    id: '2',
-    question: 'Qual a diferença entre conta Admin e Profissional?',
-    answer: '**Conta Admin (Dono do Salão):**\n- Acesso completo a todas as funcionalidades\n- Gerencia clientes, serviços, financeiro e relatórios\n- Pode adicionar e remover profissionais\n- Controla configurações do sistema\n\n**Conta Profissional:**\n- Visualiza sua própria agenda\n- Pode criar agendamentos\n- Acessa suas comissões\n- Não vê dados financeiros gerais\n\n💡 Cada profissional pode ter seu próprio login para acompanhar seus horários.',
-    category: 'getting-started',
-    tags: ['permissões', 'usuários', 'acesso'],
-    popular: true
-  },
-  
-  // Agenda
-  {
-    id: '3',
-    question: 'Como criar um novo agendamento?',
-    answer: 'Para criar um agendamento:\n\n1. Vá em **Agenda** no menu\n2. Clique no botão **"+ Novo Agendamento"**\n3. Selecione o **cliente** (ou crie um novo)\n4. Escolha o **profissional** que vai atender\n5. Selecione os **serviços** desejados\n6. Escolha **data e horário**\n7. Clique em **Salvar**\n\n✅ O sistema calcula automaticamente o horário de término baseado na duração dos serviços.',
-    category: 'agenda',
-    tags: ['agendamento', 'criar', 'novo'],
-    popular: true
-  },
-  {
-    id: '4',
-    question: 'Como cancelar um agendamento?',
-    answer: 'Para cancelar:\n\n1. Clique no agendamento na **Agenda**\n2. Na página de detalhes, clique em **"Cancelar"**\n3. Informe o **motivo do cancelamento** (opcional)\n4. Confirme a ação\n\n⚠️ **Importante:** Agendamentos cancelados ficam registrados no histórico do cliente e nos relatórios para análise.',
-    category: 'agenda',
-    tags: ['cancelar', 'desmarcar'],
-  },
-  {
-    id: '5',
-    question: 'Como adicionar mais serviços a um agendamento existente?',
-    answer: 'Você pode adicionar serviços enquanto o agendamento estiver **confirmado**:\n\n1. Abra o agendamento clicando nele na Agenda\n2. Na seção "Serviços", clique em **"Adicionar"**\n3. Selecione os serviços adicionais\n4. O sistema atualiza automaticamente o valor total e o horário de término\n\n💡 Ótimo para quando o cliente decide fazer mais serviços durante o atendimento!',
-    category: 'agenda',
-    tags: ['serviços', 'adicionar', 'editar'],
-  },
-  {
-    id: '6',
-    question: 'O que são os bloqueios de horário?',
-    answer: 'Bloqueios são períodos onde o profissional **não está disponível** para atendimento:\n\n- **Almoço ou pausas**\n- **Folgas e férias**\n- **Compromissos pessoais**\n- **Cursos e treinamentos**\n\nPara criar:\n1. Vá em **Profissionais**\n2. Clique no profissional\n3. Acesse a aba **"Bloqueios"**\n4. Adicione o período bloqueado\n\n✅ Bloqueios podem ser recorrentes (ex: toda segunda-feira não trabalha).',
-    category: 'agenda',
-    tags: ['bloqueio', 'indisponível', 'folga'],
-  },
-
-  // Clientes
-  {
-    id: '7',
-    question: 'Como cadastrar um novo cliente?',
-    answer: 'Existem duas formas:\n\n**Forma 1 - Pela página de Clientes:**\n1. Vá em **Clientes** no menu\n2. Clique em **"+ Novo Cliente"**\n3. Preencha nome e dados de contato\n\n**Forma 2 - Durante o agendamento:**\n1. Ao criar um agendamento, na seleção de cliente\n2. Clique em **"Criar Novo"**\n3. Preencha os dados rapidamente\n\n💡 O mínimo necessário é o nome. Você pode completar os dados depois.',
-    category: 'clients',
-    tags: ['cliente', 'cadastrar', 'novo'],
-  },
-  {
-    id: '8',
-    question: 'Como funciona o sistema de créditos do cliente?',
-    answer: 'Créditos são como um **saldo pré-pago** do cliente:\n\n**Adicionar créditos:**\n1. Acesse o perfil do cliente\n2. Na seção de créditos, clique em **"Adicionar"**\n3. Informe o valor e descrição\n\n**Usar créditos:**\n- Ao finalizar um atendimento, você pode abater do saldo\n- O sistema registra todas as movimentações\n\n💡 Ótimo para vender pacotes de serviços ou receber adiantado!',
-    category: 'clients',
-    tags: ['crédito', 'saldo', 'pré-pago'],
-  },
-  {
-    id: '9',
-    question: 'Como ver o histórico de atendimentos de um cliente?',
-    answer: 'Para acessar o histórico completo:\n\n1. Vá em **Clientes**\n2. Clique no nome do cliente\n3. Role até a seção **"Histórico de Atendimentos"**\n\nVocê verá:\n- ✅ Todos os agendamentos (concluídos, cancelados)\n- 💰 Valores pagos\n- 📅 Datas e serviços realizados\n- 👤 Profissional que atendeu\n\n💡 Use o histórico para oferecer serviços personalizados!',
-    category: 'clients',
-    tags: ['histórico', 'atendimentos', 'consultar'],
-  },
-
-  // Serviços
-  {
-    id: '10',
-    question: 'Como adicionar um novo serviço?',
-    answer: 'Para cadastrar serviços:\n\n1. Vá em **Serviços** no menu\n2. Clique em **"+ Novo Serviço"**\n3. Preencha:\n   - **Nome** do serviço\n   - **Preço**\n   - **Duração** em minutos\n4. Clique em **Salvar**\n\n⏱️ A duração é importante pois o sistema usa para calcular automaticamente os horários na agenda.',
-    category: 'services',
-    tags: ['serviço', 'adicionar', 'cadastrar'],
-  },
-  {
-    id: '11',
-    question: 'Como definir comissões diferentes por serviço?',
-    answer: 'Você pode configurar comissões específicas para cada profissional em cada serviço:\n\n1. Vá em **Profissionais**\n2. Clique no profissional\n3. Acesse a aba **"Comissões"**\n4. Defina a porcentagem para cada serviço\n\n**Tipos de comissão:**\n- **Percentual** - Ex: 40% do valor do serviço\n- **Valor fixo** - Ex: R$ 20,00 por serviço\n\n💡 Se não definir, o sistema usa a comissão padrão do profissional.',
-    category: 'services',
-    tags: ['comissão', 'porcentagem', 'profissional'],
-  },
-
-  // Financeiro
-  {
-    id: '12',
-    question: 'Como funciona o cálculo de comissões?',
-    answer: 'O sistema calcula automaticamente quando um agendamento é **concluído**:\n\n1. **Valor do serviço** × **% de comissão** = Comissão bruta\n2. **Deduções opcionais:**\n   - Taxa administrativa (definida nas configurações)\n   - Taxa de cartão (quando pago no cartão)\n3. **Resultado** = Comissão líquida do profissional\n\n📊 Você pode ver todas as comissões em **Financeiro > Comissões**',
-    category: 'financial',
-    tags: ['comissão', 'cálculo', 'pagamento'],
-    popular: true
-  },
-  {
-    id: '13',
-    question: 'Como marcar uma comissão como paga?',
-    answer: 'Para registrar o pagamento:\n\n1. Vá em **Financeiro**\n2. Na aba **Comissões**, encontre a comissão\n3. Clique no botão **"Pagar"** ou selecione várias\n4. Confirme o pagamento\n\n✅ A comissão muda de "Pendente" para "Paga"\n\n💡 Você pode gerar um recibo para o profissional assinar!',
-    category: 'financial',
-    tags: ['comissão', 'pagar', 'registrar'],
-  },
-  {
-    id: '14',
-    question: 'Como lançar receitas e despesas manuais?',
-    answer: 'Para controlar o fluxo de caixa:\n\n1. Vá em **Financeiro**\n2. Clique em **"+ Nova Entrada"** ou **"+ Nova Saída"**\n3. Preencha:\n   - **Descrição** - O que foi\n   - **Valor**\n   - **Categoria** (opcional)\n   - **Data**\n4. Salve\n\n📈 Esses lançamentos aparecem nos relatórios financeiros!',
-    category: 'financial',
-    tags: ['receita', 'despesa', 'caixa', 'lançamento'],
-  },
-
-  // Estoque
-  {
-    id: '15',
-    question: 'Como controlar o estoque de produtos?',
-    answer: 'O sistema permite gerenciar seu inventário:\n\n**Cadastrar produto:**\n1. Vá em **Estoque**\n2. Clique em **"+ Novo Produto"**\n3. Informe nome, quantidade, preço de custo e venda\n\n**Dar baixa no estoque:**\n- Manualmente: Registre saídas na página do produto\n- Automaticamente: Vincule produtos aos serviços\n\n⚠️ Configure o **estoque mínimo** para receber alertas!',
-    category: 'stock',
-    tags: ['estoque', 'produto', 'inventário'],
-  },
-  {
-    id: '16',
-    question: 'Como receber alertas de estoque baixo?',
-    answer: 'Para cada produto você pode definir uma **quantidade mínima**:\n\n1. Vá em **Estoque**\n2. Edite o produto\n3. Defina o campo **"Estoque mínimo"**\n\nQuando a quantidade ficar abaixo desse número:\n- 🔴 O produto aparece destacado na lista\n- 📊 Aparece nos relatórios de estoque baixo\n\n💡 Assim você nunca fica sem produtos importantes!',
-    category: 'stock',
-    tags: ['alerta', 'mínimo', 'aviso'],
-  },
-
-  // Profissionais
-  {
-    id: '17',
-    question: 'Como convidar um profissional para usar o sistema?',
-    answer: 'Para dar acesso ao profissional:\n\n1. Vá em **Profissionais**\n2. Ao cadastrar ou editar, preencha o **e-mail**\n3. Marque **"Enviar convite por e-mail"**\n4. O profissional receberá um link para criar senha\n\n👤 Com acesso próprio, o profissional pode:\n- Ver sua agenda\n- Acompanhar suas comissões\n- Criar agendamentos',
-    category: 'professionals',
-    tags: ['convite', 'acesso', 'login'],
-  },
-  {
-    id: '18',
-    question: 'Como configurar os horários de trabalho?',
-    answer: 'Para definir quando cada profissional trabalha:\n\n1. Vá em **Profissionais**\n2. Clique no profissional\n3. Acesse a aba **"Horários"**\n4. Para cada dia da semana, defina:\n   - **Horário de início** e **término**\n   - **Intervalo** (almoço, por exemplo)\n\n✅ O sistema só mostra horários disponíveis baseado nessa configuração.',
-    category: 'professionals',
-    tags: ['horário', 'trabalho', 'expediente'],
-  },
-
-  // Configurações
-  {
-    id: '19',
-    question: 'Como alterar as taxas administrativas?',
-    answer: 'As taxas são descontadas das comissões:\n\n1. Vá em **Configurações**\n2. Encontre **"Taxas e Comissões"**\n3. Configure:\n   - **Taxa administrativa** - Desconto fixo %\n   - **Taxa de cartão** - Por forma de pagamento\n\n💡 Essas taxas são descontadas automaticamente ao calcular a comissão líquida do profissional.',
-    category: 'settings',
-    tags: ['taxa', 'configuração', 'desconto'],
-  },
-  {
-    id: '20',
-    question: 'Como entrar em contato com o suporte?',
-    answer: 'Estamos aqui para ajudar! 💬\n\n**Via Chat:**\n1. Vá em **Central de Ajuda**\n2. Clique em **"Abrir Chat de Suporte"**\n3. Fale conosco em tempo real\n\n**Horário de atendimento:**\n- Segunda a Sexta: 9h às 18h\n- Sábado: 9h às 13h\n\n⏱️ Tempo médio de resposta: menos de 5 minutos!',
-    category: 'settings',
-    tags: ['suporte', 'ajuda', 'contato'],
-    popular: true
-  }
-];
-
 const quickActions = [
   {
     title: 'Criar Agendamento',
@@ -362,6 +199,21 @@ export default function HelpCenter() {
       
       if (error) throw error;
       return data;
+    }
+  });
+
+  // Fetch FAQs from database
+  const { data: faqsFromDB = [], isLoading: faqsLoading } = useQuery({
+    queryKey: ['faqs-active'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('faqs')
+        .select('*')
+        .eq('active', true)
+        .order('sort_order', { ascending: true });
+      
+      if (error) throw error;
+      return data as FAQItem[];
     }
   });
 
@@ -421,7 +273,7 @@ export default function HelpCenter() {
   };
 
   const filteredFAQs = useMemo(() => {
-    let items = faqItems;
+    let items = faqsFromDB;
 
     if (selectedCategory) {
       items = items.filter(item => item.category === selectedCategory);
@@ -433,14 +285,17 @@ export default function HelpCenter() {
         item =>
           item.question.toLowerCase().includes(query) ||
           item.answer.toLowerCase().includes(query) ||
-          item.tags.some(tag => tag.toLowerCase().includes(query))
+          (item.tags || []).some(tag => tag.toLowerCase().includes(query))
       );
     }
 
     return items;
-  }, [searchQuery, selectedCategory]);
+  }, [searchQuery, selectedCategory, faqsFromDB]);
 
-  const popularFAQs = faqItems.filter(item => item.popular);
+  const popularFAQs = useMemo(() => 
+    faqsFromDB.filter(item => item.popular),
+    [faqsFromDB]
+  );
 
   const renderAnswer = (answer: string) => {
     return answer.split('\n').map((line, index) => {
