@@ -3,6 +3,7 @@ import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ChevronLeft, ChevronRight, Plus, XCircle, ChevronDown } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
@@ -209,7 +210,15 @@ export default function Agenda() {
             <SelectItem value="all">Todos os profissionais</SelectItem>
             {professionals.map((prof) => (
               <SelectItem key={prof.id} value={prof.id}>
-                {prof.display_name}
+                <div className="flex items-center gap-2">
+                  <Avatar className="h-5 w-5">
+                    <AvatarImage src={prof.avatar_url || undefined} alt={prof.display_name} />
+                    <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                      {prof.display_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                    </AvatarFallback>
+                  </Avatar>
+                  {prof.display_name}
+                </div>
               </SelectItem>
             ))}
           </SelectContent>
@@ -303,6 +312,7 @@ export default function Agenda() {
               <div className="absolute top-0 left-14 right-0 bottom-0 pointer-events-none">
                 {appointments.filter(a => a.status !== 'cancelled').map((apt) => {
                   const pos = getAppointmentPosition(apt);
+                  const prof = apt.professional;
                   return (
                     <div
                       key={apt.id}
@@ -313,11 +323,23 @@ export default function Agenda() {
                       style={{ top: pos.top, height: pos.height }}
                       onClick={() => navigate(`/appointments/${apt.id}`)}
                     >
-                      <div className="text-xs font-medium truncate">
-                        {apt.client?.full_name || 'Cliente'}
-                      </div>
-                      <div className="text-xs opacity-80 truncate">
-                        {apt.professional?.display_name}
+                      <div className="flex items-start gap-2">
+                        {prof?.avatar_url && (
+                          <Avatar className="h-6 w-6 flex-shrink-0 border border-white/30">
+                            <AvatarImage src={prof.avatar_url} alt={prof.display_name} />
+                            <AvatarFallback className="text-[8px] bg-white/20">
+                              {prof.display_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                            </AvatarFallback>
+                          </Avatar>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="text-xs font-medium truncate">
+                            {apt.client?.full_name || 'Cliente'}
+                          </div>
+                          <div className="text-xs opacity-80 truncate">
+                            {prof?.display_name}
+                          </div>
+                        </div>
                       </div>
                     </div>
                   );

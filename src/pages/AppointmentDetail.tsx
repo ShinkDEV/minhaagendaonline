@@ -11,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ArrowLeft, Clock, User, Scissors, DollarSign, Phone, CheckCircle, XCircle, Package, History, Plus, Trash2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -305,9 +306,12 @@ export default function AppointmentDetail() {
               )}
             </div>
             <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                <Scissors className="h-5 w-5 text-primary" />
-              </div>
+              <Avatar className="h-10 w-10">
+                <AvatarImage src={appointment.professional?.avatar_url || undefined} alt={appointment.professional?.display_name} />
+                <AvatarFallback className="bg-primary/10 text-primary">
+                  <Scissors className="h-5 w-5" />
+                </AvatarFallback>
+              </Avatar>
               <div>
                 <div className="text-sm text-muted-foreground">Profissional</div>
                 <div className="font-medium">{appointment.professional?.display_name}</div>
