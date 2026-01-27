@@ -18,6 +18,7 @@ export interface Salon {
   card_fee_percent: number;
   admin_fee_percent: number;
   card_fees_by_installment: CardFeesByInstallment;
+  logo_url: string | null;
   created_at: string;
 }
 

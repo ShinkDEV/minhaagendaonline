@@ -1044,6 +1044,7 @@ export type Database = {
           card_fees_by_installment: Json
           created_at: string
           id: string
+          logo_url: string | null
           name: string
           phone: string | null
           timezone: string | null
@@ -1055,6 +1056,7 @@ export type Database = {
           card_fees_by_installment?: Json
           created_at?: string
           id?: string
+          logo_url?: string | null
           name: string
           phone?: string | null
           timezone?: string | null
@@ -1066,6 +1068,7 @@ export type Database = {
           card_fees_by_installment?: Json
           created_at?: string
           id?: string
+          logo_url?: string | null
           name?: string
           phone?: string | null
           timezone?: string | null
