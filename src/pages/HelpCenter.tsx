@@ -27,8 +27,6 @@ import {
   AlertCircle,
   Sparkles,
   Loader2,
-  TrendingUp,
-  Eye,
   Bell,
   Info,
   AlertTriangle,
@@ -628,59 +626,6 @@ export default function HelpCenter() {
             </div>
           )}
 
-          {/* Frequently Read Articles */}
-          {!searchQuery && !selectedCategory && (
-            <div className="mb-12">
-              <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-blue-500" />
-                Artigos Lidos Frequentemente
-              </h2>
-              <div className="grid gap-3">
-                {[
-                  { id: '3', views: 1247 },
-                  { id: '12', views: 983 },
-                  { id: '1', views: 856 },
-                  { id: '7', views: 721 },
-                  { id: '11', views: 654 },
-                ].map((article, index) => {
-                  const faq = faqItems.find(f => f.id === article.id);
-                  if (!faq) return null;
-                  const category = categories.find(c => c.id === faq.category);
-                  return (
-                    <Card
-                      key={faq.id}
-                      className="cursor-pointer hover:shadow-md transition-all duration-200 hover:border-primary/30 group"
-                      onClick={() => {
-                        setSelectedCategory(faq.category);
-                        setExpandedItems([faq.id]);
-                      }}
-                    >
-                      <div className="flex items-center gap-4 p-4">
-                        <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-bold text-sm shrink-0">
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <h3 className="font-medium text-sm group-hover:text-primary transition-colors line-clamp-1">
-                            {faq.question}
-                          </h3>
-                          <div className="flex items-center gap-3 mt-1">
-                            <Badge variant="outline" className="text-xs shrink-0">
-                              {category?.title}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Eye className="h-3 w-3" />
-                              {article.views.toLocaleString('pt-BR')} leituras
-                            </span>
-                          </div>
-                        </div>
-                        <ChevronRight className="h-5 w-5 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
-                      </div>
-                    </Card>
-                  );
-                })}
-              </div>
-            </div>
-          )}
 
           {/* Atualizações / Announcements */}
           {!searchQuery && !selectedCategory && (
