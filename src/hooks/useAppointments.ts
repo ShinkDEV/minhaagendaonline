@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Appointment, AppointmentStatus } from '@/types/database';
-import { format } from 'date-fns';
+import { format, startOfDay as getStartOfDay, endOfDay as getEndOfDay } from 'date-fns';
 
 export function useAppointments(date?: Date, professionalId?: string) {
   const { salon } = useAuth();
@@ -24,9 +24,11 @@ export function useAppointments(date?: Date, professionalId?: string) {
         .order('start_at');
       
       if (date) {
-        const startOfDay = format(date, 'yyyy-MM-dd') + 'T00:00:00';
-        const endOfDay = format(date, 'yyyy-MM-dd') + 'T23:59:59';
-        query = query.gte('start_at', startOfDay).lte('start_at', endOfDay);
+        // Use proper start/end of day in local timezone, then convert to ISO string
+        // This ensures we capture all appointments for the local day
+        const dayStart = getStartOfDay(date);
+        const dayEnd = getEndOfDay(date);
+        query = query.gte('start_at', dayStart.toISOString()).lte('start_at', dayEnd.toISOString());
       }
       
       if (professionalId) {
