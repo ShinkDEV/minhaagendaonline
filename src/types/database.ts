@@ -53,6 +53,7 @@ export interface Professional {
   can_delete_appointments: boolean;
   commission_percent_default: number;
   active: boolean;
+  avatar_url: string | null;
   created_at: string;
 }
 

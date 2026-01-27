@@ -2,19 +2,20 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { LogOut, User, Building2, Percent, Loader2 } from 'lucide-react';
+import { LogOut, Building2, Percent, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { ProfessionalAvatarUpload } from '@/components/ProfessionalAvatarUpload';
 
 export default function Profile() {
   const { profile, salon, user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [signingOut, setSigningOut] = useState(false);
 
   // Get professional data for current user
@@ -33,6 +34,11 @@ export default function Profile() {
     },
     enabled: !!user?.id && !!salon?.id,
   });
+
+  const handleAvatarChange = (url: string | null) => {
+    queryClient.invalidateQueries({ queryKey: ['my-professional-profile'] });
+    queryClient.invalidateQueries({ queryKey: ['professionals'] });
+  };
 
   const handleSignOut = async () => {
     setSigningOut(true);
@@ -61,12 +67,21 @@ export default function Profile() {
         <Card className="border-0 shadow-sm">
           <CardContent className="p-6">
             <div className="flex flex-col items-center text-center">
-              <Avatar className="h-20 w-20 mb-4">
-                <AvatarFallback className="bg-primary/10 text-primary font-bold text-xl">
-                  {getInitials(profile?.full_name || 'U')}
-                </AvatarFallback>
-              </Avatar>
-              <h2 className="text-xl font-bold">{profile?.full_name}</h2>
+              {professional ? (
+                <ProfessionalAvatarUpload
+                  professionalId={professional.id}
+                  currentAvatarUrl={professional.avatar_url}
+                  displayName={professional.display_name}
+                  onAvatarChange={handleAvatarChange}
+                />
+              ) : (
+                <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                  <span className="text-primary font-bold text-2xl">
+                    {getInitials(profile?.full_name || 'U')}
+                  </span>
+                </div>
+              )}
+              <h2 className="text-xl font-bold mt-4">{profile?.full_name}</h2>
               <Badge variant="outline" className="mt-2">
                 {isAdmin ? 'Dono do Salão' : 'Profissional'}
               </Badge>
