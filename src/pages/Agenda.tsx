@@ -18,8 +18,27 @@ import { Appointment } from '@/types/database';
 
 const hours = Array.from({ length: 12 }, (_, i) => `${(i + 8).toString().padStart(2, '0')}:00`);
 
+// Professional colors palette - vibrant, distinguishable colors
+const professionalColors = [
+  { bg: 'bg-violet-500', border: 'border-violet-600' },
+  { bg: 'bg-blue-500', border: 'border-blue-600' },
+  { bg: 'bg-emerald-500', border: 'border-emerald-600' },
+  { bg: 'bg-amber-500', border: 'border-amber-600' },
+  { bg: 'bg-rose-500', border: 'border-rose-600' },
+  { bg: 'bg-cyan-500', border: 'border-cyan-600' },
+  { bg: 'bg-fuchsia-500', border: 'border-fuchsia-600' },
+  { bg: 'bg-orange-500', border: 'border-orange-600' },
+  { bg: 'bg-teal-500', border: 'border-teal-600' },
+  { bg: 'bg-indigo-500', border: 'border-indigo-600' },
+];
+
+const getProfessionalColor = (professionalId: string, professionals: { id: string }[]) => {
+  const index = professionals.findIndex(p => p.id === professionalId);
+  return professionalColors[index % professionalColors.length];
+};
+
 const statusColors: Record<string, string> = {
-  confirmed: 'bg-primary',
+  confirmed: '', // Will use professional color instead
   completed: 'bg-green-500',
   cancelled: 'bg-muted text-muted-foreground line-through',
 };
@@ -208,19 +227,23 @@ export default function Agenda() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os profissionais</SelectItem>
-            {professionals.map((prof) => (
-              <SelectItem key={prof.id} value={prof.id}>
-                <div className="flex items-center gap-2">
-                  <Avatar className="h-5 w-5">
-                    <AvatarImage src={prof.avatar_url || undefined} alt={prof.display_name} />
-                    <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
-                      {prof.display_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
-                    </AvatarFallback>
-                  </Avatar>
-                  {prof.display_name}
-                </div>
-              </SelectItem>
-            ))}
+            {professionals.map((prof, index) => {
+              const color = professionalColors[index % professionalColors.length];
+              return (
+                <SelectItem key={prof.id} value={prof.id}>
+                  <div className="flex items-center gap-2">
+                    <div className={cn("h-3 w-3 rounded-full", color.bg)} />
+                    <Avatar className="h-5 w-5">
+                      <AvatarImage src={prof.avatar_url || undefined} alt={prof.display_name} />
+                      <AvatarFallback className="text-[10px] bg-primary/10 text-primary">
+                        {prof.display_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
+                      </AvatarFallback>
+                    </Avatar>
+                    {prof.display_name}
+                  </div>
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
 
@@ -313,12 +336,15 @@ export default function Agenda() {
                 {appointments.filter(a => a.status !== 'cancelled').map((apt) => {
                   const pos = getAppointmentPosition(apt);
                   const prof = apt.professional;
+                  const profColor = prof ? getProfessionalColor(prof.id, professionals) : professionalColors[0];
+                  const bgClass = apt.status === 'completed' ? 'bg-green-500' : profColor.bg;
+                  
                   return (
                     <div
                       key={apt.id}
                       className={cn(
-                        "absolute left-1 right-1 rounded-lg p-2 pointer-events-auto cursor-pointer text-white",
-                        statusColors[apt.status]
+                        "absolute left-1 right-1 rounded-lg p-2 pointer-events-auto cursor-pointer text-white shadow-sm",
+                        bgClass
                       )}
                       style={{ top: pos.top, height: pos.height }}
                       onClick={() => navigate(`/appointments/${apt.id}`)}
