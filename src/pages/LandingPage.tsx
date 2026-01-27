@@ -326,7 +326,7 @@ export default function LandingPage() {
 
               <div className="flex flex-wrap gap-2 justify-center lg:justify-start mb-8">
                 <Badge variant="secondary" className="gap-1">
-                  <Smartphone className="h-3 w-3" /> Mobile-first
+                  <Users className="h-3 w-3" /> Gestão de Profissionais
                 </Badge>
                 <Badge variant="secondary" className="gap-1">
                   <Zap className="h-3 w-3" /> Rápido
