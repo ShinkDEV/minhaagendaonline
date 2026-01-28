@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { Appointment, AppointmentStatus } from '@/types/database';
-import { format, startOfDay as getStartOfDay, endOfDay as getEndOfDay } from 'date-fns';
+import { format, startOfDay as getStartOfDay, endOfDay as getEndOfDay, addDays } from 'date-fns';
 
 export function useAppointments(date?: Date, professionalId?: string) {
   const { salon, isAdmin } = useAuth();
@@ -27,11 +27,17 @@ export function useAppointments(date?: Date, professionalId?: string) {
         .order('start_at');
       
       if (date) {
-        // Use proper start/end of day in local timezone, then convert to ISO string
-        // This ensures we capture all appointments for the local day
-        const dayStart = getStartOfDay(date);
-        const dayEnd = getEndOfDay(date);
-        query = query.gte('start_at', dayStart.toISOString()).lte('start_at', dayEnd.toISOString());
+        // Calculate start and end of the selected day in ISO format (UTC)
+        // We use format(date, 'yyyy-MM-dd') to get the local date string, 
+        // then append T00:00:00Z and T23:59:59Z to cover the entire day in UTC, 
+        // which is generally safer for Supabase timestampz columns.
+        // However, since we are using date-fns's getStartOfDay/getEndOfDay, 
+        // we rely on the client's timezone, which is correct for the user's view.
+        
+        const dayStart = getStartOfDay(date).toISOString();
+        const dayEnd = getEndOfDay(date).toISOString();
+        
+        query = query.gte('start_at', dayStart).lte('start_at', dayEnd);
       }
       
       if (professionalId) {
@@ -54,15 +60,19 @@ export function useMonthAppointmentCounts(month: Date, professionalId?: string) 
     queryFn: async () => {
       if (!salon?.id) return {};
       
-      const startOfMonth = format(month, 'yyyy-MM') + '-01T00:00:00';
-      const endOfMonth = format(new Date(month.getFullYear(), month.getMonth() + 1, 0), 'yyyy-MM-dd') + 'T23:59:59';
+      // Calculate start and end of the month using local time, then convert to ISO string
+      const monthStart = getStartOfDay(month).toISOString();
+      const monthEnd = getEndOfDay(addDays(month, 30)).toISOString(); // Approximation, safer to use date-fns functions
+
+      const startOfMonthDate = getStartOfDay(month);
+      const endOfMonthDate = getEndOfDay(new Date(month.getFullYear(), month.getMonth() + 1, 0));
       
       let query = supabase
         .from('appointments')
         .select('start_at, status')
         .eq('salon_id', salon.id)
-        .gte('start_at', startOfMonth)
-        .lte('start_at', endOfMonth)
+        .gte('start_at', startOfMonthDate.toISOString())
+        .lte('start_at', endOfMonthDate.toISOString())
         .neq('status', 'cancelled');
       
       if (professionalId) {
@@ -75,6 +85,7 @@ export function useMonthAppointmentCounts(month: Date, professionalId?: string) 
       // Count appointments per day
       const counts: Record<string, number> = {};
       data?.forEach(apt => {
+        // Ensure we format the date from the ISO string back to the local day string
         const day = format(new Date(apt.start_at), 'yyyy-MM-dd');
         counts[day] = (counts[day] || 0) + 1;
       });
