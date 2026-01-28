@@ -1,7 +1,7 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Calendar, Users, DollarSign, Clock, Plus, TrendingUp, AlertCircle, Crown, XCircle, Gift } from 'lucide-react';
+import { Calendar, Users, DollarSign, Clock, Plus, TrendingUp, AlertCircle, Crown, XCircle, Gift, ChevronDown } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useAppointments } from '@/hooks/useAppointments';
@@ -17,11 +17,21 @@ import { ServiceRankingCard } from '@/components/dashboard/ServiceRankingCard';
 import { CancellationChart } from '@/components/dashboard/CancellationChart';
 import { ClientRankingCard } from '@/components/dashboard/ClientRankingCard';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
+
+const statusLabels = {
+  confirmed: { label: 'Confirmado', color: 'bg-primary' },
+  completed: { label: 'Concluído', color: 'bg-green-500' },
+  cancelled: { label: 'Cancelado', color: 'bg-muted text-muted-foreground' },
+};
 
 export default function Dashboard() {
   const { profile, salon, salonPlan, isAdmin, isSuperAdmin, user, trialCancelled, trialExpired, trialDaysRemaining, loading } = useAuth();
   const navigate = useNavigate();
   const today = new Date();
+  const [showCancelled, setShowCancelled] = useState(false);
   
   // Get professional ID for current user (for filtering)
   const { data: myProfessional, isLoading: loadingProfessional } = useQuery({
@@ -81,6 +91,13 @@ export default function Dashboard() {
   // For admins, all appointments are returned; for professionals, only their own
   const filteredAppointments = todayAppointments;
 
+  // Filter all appointments for today, not just confirmed
+  const allTodayAppointments = filteredAppointments.sort((a, b) => 
+    new Date(a.start_at).getTime() - new Date(b.start_at).getTime()
+  );
+  const activeTodayAppointments = allTodayAppointments.filter(a => a.status !== 'cancelled');
+  const cancelledTodayAppointments = allTodayAppointments.filter(a => a.status === 'cancelled');
+
   // RLS already filters commissions for professionals, so we use the data directly
   const filteredCommissions = pendingCommissions;
 
@@ -124,7 +141,7 @@ export default function Dashboard() {
   const professionalStats = [
     { 
       label: 'Meus Atendimentos', 
-      value: confirmedToday.length.toString(), 
+      value: activeTodayAppointments.length.toString(), // Changed to activeTodayAppointments
       sublabel: 'hoje', 
       icon: Calendar, 
       color: 'bg-primary/10 text-primary' 
@@ -209,6 +226,53 @@ export default function Dashboard() {
                 </p>
               </div>
               <Button variant="outline" size="sm" className="shrink-0 text-xs px-2 md:px-3" onClick={() => navigate('/plans')}>
+                Ver planos
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Trial Cancelled Warning */}
+        {cancelledTrial && !trialExpired && (
+          <Alert variant="destructive">
+            <XCircle className="h-4 w-4" />
+            <AlertTitle>Seu teste gratuito foi encerrado</AlertTitle>
+            <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-2">
+              <span>Seu período de teste foi cancelado. Para continuar, escolha um plano.</span>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => navigate('/upgrade')}
+              >
+                Ver planos
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Announcements */}
+        <AnnouncementBanner />
+
+        {/* Header */}
+        <div>
+          <h1 className="text-xl md:text-2xl font-bold text-foreground">
+            Olá, {profile?.full_name?.split(' ')[0]}! 👋
+          </h1>
+          <p className="text-muted-foreground text-sm truncate">{salon?.name}</p>
+        </div>
+
+        {/* Plan info - only for admins */}
+        {isAdmin && salonPlan && (
+          <Card className="border-primary/20 bg-primary/5">
+            <CardContent className="p-2.5 md:p-4 flex items-center gap-2 md:gap-3">
+              <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-xs md:text-sm font-medium truncate">Plano: {salonPlan.plan.name}</p>
+                <p className="text-[10px] md:text-xs text-muted-foreground">
+                  Até {salonPlan.plan.max_professionals} profissionais
+                </p>
+              </div>
+              <Button variant="outline" size="sm" className="shrink-0 text-xs px-2 md:px-3" onClick={() => navigate('/upgrade')}>
                 Ver planos
               </Button>
             </CardContent>
@@ -300,42 +364,94 @@ export default function Dashboard() {
               </Button>
             </div>
             
-            {confirmedToday.length === 0 ? (
+            {activeTodayAppointments.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-4">
                 Nenhum agendamento para hoje
               </p>
             ) : (
               <div className="divide-y divide-border -mx-3 md:-mx-4">
-                {confirmedToday.slice(0, 5).map((apt) => (
-                  <div 
-                    key={apt.id} 
-                    className="flex items-center gap-3 md:gap-4 px-3 md:px-4 py-2.5 md:py-3 cursor-pointer hover:bg-muted/50 active:bg-muted"
-                    onClick={() => navigate(`/appointments/${apt.id}`)}
-                  >
-                    <div className="text-center min-w-[40px] md:min-w-[50px]">
-                      <div className="text-xs md:text-sm font-semibold text-foreground">
-                        {format(new Date(apt.start_at), 'HH:mm')}
+                {activeTodayAppointments.map((apt) => {
+                  const statusInfo = statusLabels[apt.status];
+                  return (
+                    <div 
+                      key={apt.id} 
+                      className="flex items-center gap-3 md:gap-4 px-3 md:px-4 py-2.5 md:py-3 cursor-pointer hover:bg-muted/50 active:bg-muted"
+                      onClick={() => navigate(`/appointments/${apt.id}`)}
+                    >
+                      <div className="text-center min-w-[40px] md:min-w-[50px]">
+                        <div className="text-xs md:text-sm font-semibold text-foreground">
+                          {format(new Date(apt.start_at), 'HH:mm')}
+                        </div>
                       </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm md:text-base text-foreground truncate">
+                          {apt.client?.full_name || 'Cliente não informado'}
+                        </div>
+                        <div className="text-xs md:text-sm text-muted-foreground truncate">
+                          {apt.appointment_services?.map(s => s.service?.name).join(', ')}
+                        </div>
+                      </div>
+                      <Badge className={statusInfo.color}>
+                        {statusInfo.label}
+                      </Badge>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="font-medium text-sm md:text-base text-foreground truncate">
-                        {apt.client?.full_name || 'Cliente não informado'}
-                      </div>
-                      <div className="text-xs md:text-sm text-muted-foreground truncate">
-                        {apt.appointment_services?.map(s => s.service?.name).join(', ')}
-                      </div>
-                    </div>
-                    {isAdmin && (
-                      <div className="text-[10px] md:text-xs text-muted-foreground bg-secondary px-1.5 md:px-2 py-0.5 md:py-1 rounded-full truncate max-w-[80px] md:max-w-none">
-                        {apt.professional?.display_name}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Cancelled Appointments Section */}
+        {cancelledTodayAppointments.length > 0 && (
+          <Collapsible open={showCancelled} onOpenChange={setShowCancelled}>
+            <Card className="border-0 shadow-sm">
+              <CollapsibleTrigger asChild>
+                <CardContent className="p-3 cursor-pointer hover:bg-muted/50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <XCircle className="h-4 w-4" />
+                      <span className="text-sm font-medium">
+                        {cancelledTodayAppointments.length} cancelamento{cancelledTodayAppointments.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <ChevronDown className={cn(
+                      "h-4 w-4 text-muted-foreground transition-transform",
+                      showCancelled && "rotate-180"
+                    )} />
+                  </div>
+                </CardContent>
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <div className="px-3 pb-3 space-y-2">
+                  {cancelledTodayAppointments.map((apt) => (
+                    <div
+                      key={apt.id}
+                      className="p-3 rounded-lg bg-muted/50 cursor-pointer hover:bg-muted transition-colors"
+                      onClick={() => navigate(`/appointments/${apt.id}`)}
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium line-through text-muted-foreground">
+                            {apt.client?.full_name || 'Cliente não informado'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {apt.professional?.display_name} • {format(new Date(apt.start_at), 'HH:mm')} - {format(new Date(apt.end_at), 'HH:mm')}
+                          </p>
+                          {apt.cancelled_reason && (
+                            <p className="text-xs text-destructive/80">
+                              Motivo: {apt.cancelled_reason}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CollapsibleContent>
+            </Card>
+          </Collapsible>
+        )}
       </div>
     </AppLayout>
   );

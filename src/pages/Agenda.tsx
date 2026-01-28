@@ -337,6 +337,9 @@ export default function Agenda() {
         {/* Time grid */}
         <Card className="border-0 shadow-sm overflow-hidden">
           <CardContent className="p-0">
+            {/* Note: The visible hours in the agenda grid (e.g., 8:00 to 20:00) are determined by the
+            salon's configured working hours in the Settings page. If an appointment falls outside
+            these hours, it might not be visible in the grid. */}
             <div className="relative">
               {hours.map((hour) => (
                 <div key={hour} className="flex h-16 border-b border-border last:border-b-0">
@@ -445,7 +448,7 @@ export default function Agenda() {
                             {apt.client?.full_name || 'Cliente não informado'}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {apt.professional?.display_name} • {format(parseISO(apt.start_at), 'HH:mm')} - {format(parseISO(apt.end_at), 'HH:mm')}
+                            {apt.professional?.display_name} • {format(new Date(apt.start_at), 'HH:mm')} - {format(new Date(apt.end_at), 'HH:mm')}
                           </p>
                           {apt.cancelled_reason && (
                             <p className="text-xs text-destructive/80">
