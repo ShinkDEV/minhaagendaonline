@@ -225,53 +225,6 @@ export default function Dashboard() {
                   Até {salonPlan.plan.max_professionals} profissionais
                 </p>
               </div>
-              <Button variant="outline" size="sm" className="shrink-0 text-xs px-2 md:px-3" onClick={() => navigate('/plans')}>
-                Ver planos
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Trial Cancelled Warning */}
-        {cancelledTrial && !trialExpired && (
-          <Alert variant="destructive">
-            <XCircle className="h-4 w-4" />
-            <AlertTitle>Seu teste gratuito foi encerrado</AlertTitle>
-            <AlertDescription className="flex flex-col sm:flex-row sm:items-center gap-2">
-              <span>Seu período de teste foi cancelado. Para continuar, escolha um plano.</span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={() => navigate('/upgrade')}
-              >
-                Ver planos
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {/* Announcements */}
-        <AnnouncementBanner />
-
-        {/* Header */}
-        <div>
-          <h1 className="text-xl md:text-2xl font-bold text-foreground">
-            Olá, {profile?.full_name?.split(' ')[0]}! 👋
-          </h1>
-          <p className="text-muted-foreground text-sm truncate">{salon?.name}</p>
-        </div>
-
-        {/* Plan info - only for admins */}
-        {isAdmin && salonPlan && (
-          <Card className="border-primary/20 bg-primary/5">
-            <CardContent className="p-2.5 md:p-4 flex items-center gap-2 md:gap-3">
-              <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-primary shrink-0" />
-              <div className="flex-1 min-w-0">
-                <p className="text-xs md:text-sm font-medium truncate">Plano: {salonPlan.plan.name}</p>
-                <p className="text-[10px] md:text-xs text-muted-foreground">
-                  Até {salonPlan.plan.max_professionals} profissionais
-                </p>
-              </div>
               <Button variant="outline" size="sm" className="shrink-0 text-xs px-2 md:px-3" onClick={() => navigate('/upgrade')}>
                 Ver planos
               </Button>
