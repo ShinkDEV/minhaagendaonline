@@ -19,12 +19,12 @@ import { ClientRankingCard } from '@/components/dashboard/ClientRankingCard';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Dashboard() {
-  const { profile, salon, salonPlan, isAdmin, isSuperAdmin, user, trialCancelled, trialExpired, trialDaysRemaining } = useAuth();
+  const { profile, salon, salonPlan, isAdmin, isSuperAdmin, user, trialCancelled, trialExpired, trialDaysRemaining, loading } = useAuth();
   const navigate = useNavigate();
   const today = new Date();
   
   // Get professional ID for current user (for filtering)
-  const { data: myProfessional } = useQuery({
+  const { data: myProfessional, isLoading: loadingProfessional } = useQuery({
     queryKey: ['my-professional', user?.id, salon?.id],
     queryFn: async () => {
       if (!user?.id || !salon?.id) return null;
@@ -39,7 +39,10 @@ export default function Dashboard() {
     enabled: !!user?.id && !!salon?.id && !isAdmin,
   });
 
-  const { data: todayAppointments = [] } = useAppointments(today);
+  // Determine the professional ID to filter appointments by
+  const professionalFilterId = isAdmin ? undefined : myProfessional?.id;
+
+  const { data: todayAppointments = [] } = useAppointments(today, professionalFilterId);
   const { data: pendingCommissions = [] } = useCommissions('pending');
 
   // Check if user's trial was cancelled
@@ -57,6 +60,15 @@ export default function Dashboard() {
     },
     enabled: !!user?.email,
   });
+
+  // Wait for main auth loading and, if professional, wait for professional ID lookup
+  if (loading || (!isAdmin && loadingProfessional)) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+      </div>
+    );
+  }
 
   // RLS already filters appointments for professionals, so we use the data directly
   // For admins, all appointments are returned; for professionals, only their own
