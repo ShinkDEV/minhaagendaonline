@@ -5,7 +5,10 @@ import { Appointment, AppointmentStatus } from '@/types/database';
 import { format, startOfDay as getStartOfDay, endOfDay as getEndOfDay } from 'date-fns';
 
 export function useAppointments(date?: Date, professionalId?: string) {
-  const { salon } = useAuth();
+  const { salon, isAdmin } = useAuth();
+
+  // Only enable if salon ID is present AND (if not admin, professionalId is present)
+  const enabled = !!salon?.id && (isAdmin || !!professionalId);
 
   return useQuery({
     queryKey: ['appointments', salon?.id, date?.toISOString(), professionalId],
@@ -39,7 +42,7 @@ export function useAppointments(date?: Date, professionalId?: string) {
       if (error) throw error;
       return data as Appointment[];
     },
-    enabled: !!salon?.id,
+    enabled: enabled,
   });
 }
 

@@ -42,7 +42,14 @@ export default function Dashboard() {
   // Determine the professional ID to filter appointments by
   const professionalFilterId = isAdmin ? undefined : myProfessional?.id;
 
-  const { data: todayAppointments = [] } = useAppointments(today, professionalFilterId);
+  // Only fetch appointments if we are admin OR if we are a professional and have the ID
+  const shouldFetchAppointments = isAdmin || (myProfessional && !loadingProfessional);
+
+  const { data: todayAppointments = [] } = useAppointments(
+    today, 
+    professionalFilterId
+  );
+  
   const { data: pendingCommissions = [] } = useCommissions('pending');
 
   // Check if user's trial was cancelled
